@@ -111,6 +111,7 @@ form {
 }
 
 input,
+textarea,
 select,
 button {
   padding: 14px 18px;
@@ -122,10 +123,12 @@ button {
 }
 
 input:focus,
+textarea:focus,
 select:focus {
   outline: none;
 }
 
+textarea:focus::placeholder,
 input:focus::placeholder {
   color: transparent;
 }
