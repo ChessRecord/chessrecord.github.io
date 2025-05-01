@@ -1,8 +1,8 @@
 //########################################################################################
 //########################################################################################
 
-// Initialize games from localStorage or empty array
-let games = JSON.parse(localStorage.getItem("chessGames")) || [];
+// Attach games to the global window object
+window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
 /*API REQUEST INFO*/
 const LOADER_CONFIG = {
@@ -39,8 +39,8 @@ async function fide_api(FIDE) {
 }
 
 async function addGame(event) {
+  event.preventDefault(); // Prevent form submission
   showLoader();
-  event.preventDefault();
 
   const whiteFIDE = parseInt(document.getElementById("whiteFIDE").value.trim());
   const blackFIDE = parseInt(document.getElementById("blackFIDE").value.trim());
@@ -131,7 +131,7 @@ async function addGame(event) {
     alert("Game already exists or player conflict in this round!");
     return;
   }
-    games.push(game);
+    window.games.push(game);
     saveGames();
     displayGames();
     event.target.reset();
@@ -147,22 +147,11 @@ async function addGame(event) {
   }
 }
 
-document.getElementById("gameForm").addEventListener("submit", addGame);
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  displayGames(e.target.value);
-});
-
-const tabBtns = document.querySelectorAll(".tab-btn");
-const tabContents = document.querySelectorAll(".tab-content");
-
-tabBtns.forEach((btn, index) => {
-  btn.addEventListener("click", () => {
-    tabBtns.forEach((b) => b.classList.remove("active"));
-    tabContents.forEach((c) => c.classList.remove("active"));
-
-    btn.classList.add("active");
-    tabContents[index].classList.add("active");
-  });
+document.addEventListener("DOMContentLoaded", () => {
+  const gameForm = document.getElementById("gameForm");
+  if (gameForm) {
+    gameForm.addEventListener("submit", addGame);
+  }
 });
 
 displayGames();

@@ -1,12 +1,16 @@
-//########################################################################################
-//########################################################################################
+// Removed unnecessary functions and kept only those required for `custom.html`
+window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
-// Initialize games from localStorage or empty array
-let games = JSON.parse(localStorage.getItem("chessGames")) || [];
+document.addEventListener("DOMContentLoaded", () => {
+  const gameForm = document.getElementById("gameForm");
+  if (gameForm) {
+    gameForm.addEventListener("submit", addGame);
+  }
+});
 
 function addGame(event) {
+  event.preventDefault(); // Prevent form submission
   showLoader();
-  event.preventDefault();
 
   const result = document.getElementById("result").value;
 
@@ -31,10 +35,10 @@ function addGame(event) {
   const game = {
     id: generateUniqueID(),
     white: playerWhite,
-    whiteRating: whiteRating, // This line should be present
+    whiteRating: whiteRating,
     whiteTitle: abbreviateTitle(document.getElementById("whiteTitle").value.toUpperCase()),
     black: playerBlack,
-    blackRating: blackRating, // This line should be present
+    blackRating: blackRating,
     blackTitle: abbreviateTitle(document.getElementById("blackTitle").value.toUpperCase()),
     result: result,
     tournament: tournament,
@@ -44,8 +48,7 @@ function addGame(event) {
     gameLink: document.getElementById("gameLink").value,
   };
 
-  // 🚀 **Add duplicate check here BEFORE pushing to games**
-  if (games.some(g => 
+  if (window.games.some(g => 
     (g.white === playerWhite || g.black === playerBlack) && 
     g.date === date && 
     g.tournament === tournament && 
@@ -54,44 +57,21 @@ function addGame(event) {
     alert("Game already exists or player conflict in this round!");
     return;
   }
-    games.push(game);
-    saveGames();
-    displayGames();
-    event.target.reset();
-  
-    hideLoader();
-  
-    alert(
-      `${toUnicodeVariant(
-        game.whiteTitle,
-        "bold sans",
-        "sans"
-      )} ${playerWhite} vs ${toUnicodeVariant(
-        game.blackTitle,
-        "bold sans",
-        "sans"
-      )} ${playerBlack} Game Added!`
-    );
+
+  window.games.push(game);
+  saveGames();
+  event.target.reset();
+  hideLoader();
+
+  alert(
+    `${toUnicodeVariant(
+      game.whiteTitle,
+      "bold sans",
+      "sans"
+    )} ${playerWhite} vs ${toUnicodeVariant(
+      game.blackTitle,
+      "bold sans",
+      "sans"
+    )} ${playerBlack} Game Added!`
+  );
 }
-
-
-
-document.getElementById("gameForm").addEventListener("submit", addGame);
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  displayGames(e.target.value);
-});
-
-const tabBtns = document.querySelectorAll(".tab-btn");
-const tabContents = document.querySelectorAll(".tab-content");
-
-tabBtns.forEach((btn, index) => {
-  btn.addEventListener("click", () => {
-    tabBtns.forEach((b) => b.classList.remove("active"));
-    tabContents.forEach((c) => c.classList.remove("active"));
-
-    btn.classList.add("active");
-    tabContents[index].classList.add("active");
-  });
-});
-
-displayGames();

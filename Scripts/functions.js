@@ -117,7 +117,7 @@ function toUnicodeVariant(str, variant, flags) {
 //###################################################//
 
 function saveGames() {
-  localStorage.setItem("chessGames", JSON.stringify(games));
+  localStorage.setItem("chessGames", JSON.stringify(window.games));
 }
 
 function generateUniqueID() {
@@ -268,29 +268,38 @@ function showSuggestions(titleElement, inputElement, suggestionsContainer, sugge
   });
 }
 
-document.getElementById('playerWhite').addEventListener('input', async function (e) {
-  const query = e.target.value;
-  const whiteTitleElement = document.getElementById('whiteTitle');
-  const suggestionsContainer = document.getElementById('whiteSuggestions');
-  if (query.length > 1) {
-    const suggestions = await fetchPlayerNames(query);
-    showSuggestions(whiteTitleElement, e.target, suggestionsContainer, suggestions);
-  } else {
-    suggestionsContainer.innerHTML = '';
-    e.target.dataset.title = '';
-  }
-});
+document.addEventListener("DOMContentLoaded", () => {
+  const playerWhite = document.getElementById("playerWhite");
+  const playerBlack = document.getElementById("playerBlack");
 
-document.getElementById('playerBlack').addEventListener('input', async function (e) {
-  const query = e.target.value;
-  const blackTitleElement = document.getElementById('blackTitle');
-  const suggestionsContainer = document.getElementById('blackSuggestions');
-  if (query.length > 1) {
-    const suggestions = await fetchPlayerNames(query);
-    showSuggestions(blackTitleElement, e.target, suggestionsContainer, suggestions);
-  } else {
-    suggestionsContainer.innerHTML = '';
-    e.target.dataset.title = '';
+  if (playerWhite) {
+    playerWhite.addEventListener("input", async function (e) {
+      const query = e.target.value;
+      const whiteTitleElement = document.getElementById('whiteTitle');
+      const suggestionsContainer = document.getElementById('whiteSuggestions');
+      if (query.length > 1) {
+        const suggestions = await fetchPlayerNames(query);
+        showSuggestions(whiteTitleElement, e.target, suggestionsContainer, suggestions);
+      } else {
+        suggestionsContainer.innerHTML = '';
+        e.target.dataset.title = '';
+      }
+    });
+  }
+
+  if (playerBlack) {
+    playerBlack.addEventListener("input", async function (e) {
+      const query = e.target.value;
+      const blackTitleElement = document.getElementById('blackTitle');
+      const suggestionsContainer = document.getElementById('blackSuggestions');
+      if (query.length > 1) {
+        const suggestions = await fetchPlayerNames(query);
+        showSuggestions(blackTitleElement, e.target, suggestionsContainer, suggestions);
+      } else {
+        suggestionsContainer.innerHTML = '';
+        e.target.dataset.title = '';
+      }
+    });
   }
 });
 
@@ -382,13 +391,13 @@ function isEmpty(array) {
 }
 
 function exportJSON() {
-  if (isEmpty(games)) {
+  if (isEmpty(window.games)) {
     alert("No games were found in this database");
     return;
   }
 
   // Convert the games array to a JSON string
-  const dataInitial = JSON.parse(JSON.stringify(games));
+  const dataInitial = JSON.parse(JSON.stringify(window.games));
 
   // Remove the "id" key from each game object
   dataInitial.forEach(game => {
@@ -436,8 +445,8 @@ function importJSON(event) {
           }
 
           // Update the games variable
-          games = importedData;
-          localStorage.setItem("chessGames", JSON.stringify(games));
+          window.games = importedData;
+          localStorage.setItem("chessGames", JSON.stringify(window.games));
           displayGames(); // Refresh the displayed games
 
           alert("Games imported successfully!");
@@ -452,7 +461,7 @@ function importJSON(event) {
 
 
 function deleteGame(id) {
-  let gameToDelete = games.find((game) => game.id === id);
+  let gameToDelete = window.games.find((game) => game.id === id);
   let delete_confirmation = `Are you sure you want to delete:\n ${toUnicodeVariant(
     gameToDelete.whiteTitle,
     "bold sans",
@@ -463,7 +472,7 @@ function deleteGame(id) {
     "sans"
   )} ${gameToDelete.black} ?`;
   if (confirm(delete_confirmation) == true) {
-    games = games.filter((game) => game.id !== id);
+    window.games = window.games.filter((game) => game.id !== id);
     saveGames();
     displayGames();
   }
@@ -471,9 +480,14 @@ function deleteGame(id) {
 
 function displayGames(searchTerm = "") {
   const gamesList = document.getElementById("gamesList");
+  if (!gamesList) {
+    console.warn("gamesList element not found in the DOM.");
+    return;
+  }
+
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
-  const filteredGames = games
+  const filteredGames = window.games
     .filter(
       (game) =>
         game.white.toLowerCase().includes(normalizedSearchTerm) ||

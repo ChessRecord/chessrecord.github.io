@@ -26,12 +26,7 @@
   <body>
     <div class="container">
       <h1>Chess Games Tracker</h1>
-      <div class="tab-buttons">
-        <button class="tab-btn active">Add Game</button>
-        <button class="tab-btn">View Games</button>
-      </div>
-      <div class="tab-content active">
-        <form id="gameForm">
+        <form id="gameForm" onsubmit="return false;">
           <div class="inlineForm">
             <input
               type="number"
@@ -105,59 +100,14 @@
             <div class="loader" id="loader"></div>
           </button>
         </form>
-      </div>
-      <div class="tab-content">
-        <div class="filters">
-          <div id="search">
-            <input
-              type="text"
-              class="fontawesome"
-              id="searchInput"
-              placeholder="  Search by player or tournament name"
-            />
-          </div>
-          <div class="options">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </div>
-          <div class="dropdown">
-            <a onclick="exportJSON()" class="dropdown-item">
-              <div class="load">
-                <i class="fa-solid fa-download"></i>
-                <span style="font-size: var(--small);">Export Games</span>
-              </div>
-            </a>
-            <a onclick="document.getElementById('fileInput').click();" class="dropdown-item">
-              <div class="load">
-                <i class="fa-solid fa-upload"></i>
-                <span style="font-size: var(--small);">Import Games</span>
-              </div>
-              <input
-                type="file"
-                id="fileInput"
-                accept=".json"
-                style="display: none"
-                onchange="importJSON(event)"
-              />
-            </a>
-          </div>
-        </div>
-        <div id="gamesList"></div>
-      </div>
     </div>
     <a href="./custom" class="redirect tooltip">
       <i class="fa-solid fa-rocket"></i>
       <span class="tooltiptext">Use Player Names For Input</span>
     </a>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js"
-      integrity="sha512-8py0AXTY8pfAroJmBkYfJ+VuKUKMMsUOC1MldW9kkC/k4SZi6AexSDS60QYn41U2rp8KL9IpVHy8FxW2TDmjDA=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-    <script src="Scripts/customSelect.js"></script>
-    <script src="Scripts/search.js"></script>
     <script src="Scripts/functions.js"></script>
     <script src="Scripts/script.js"></script>
+    <script src="Scripts/customSelect.js"></script>
     <script src="Scripts/darkTheme.js"></script>
     <script src="Scripts/dropdown.js"></script>
   </body>
