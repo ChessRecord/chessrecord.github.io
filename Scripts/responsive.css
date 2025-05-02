@@ -43,15 +43,6 @@
     width: 100%;
   }
 
-  .tab-buttons {
-    align-items: center;
-  }
-
-  .tab-buttons button {
-    margin: 5px 0; /* Adjust spacing between buttons */
-    width: 80%; /* Make buttons wider on small screens */
-  }
-
   .inlineForm {
     gap: 10px;
   }

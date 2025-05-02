@@ -21,19 +21,6 @@ body.dark-theme {
 }
 
 /* ========================= */
-/* Tab and Button Styles     */
-/* ========================= */
-.dark-theme .tab-btn {
-  background-color: var(--black-2c);
-}
-
-.dark-theme .tab-buttons button:not(.active) {
-  border: 2px solid var(--grey-555);
-  background-color: var(--black-2c);
-  color: var(--grey-888);
-}
-
-/* ========================= */
 /* Game Entry Styles         */
 /* ========================= */
 .dark-theme .game-entry {
