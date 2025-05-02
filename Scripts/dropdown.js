@@ -5,15 +5,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const optionsButton = document.querySelector('.options');
     const dropdown = document.querySelector('.dropdown');
 
-    optionsButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showDropdown();
-    });
+    if (optionsButton) {
+        optionsButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showDropdown();
+        });
+    }
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!dropdown.contains(e.target)) {
-            hideDropdown();
-        }
-    });
+    if (dropdown) {
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+                hideDropdown();
+            }
+        });
+    }
 });

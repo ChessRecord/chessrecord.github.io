@@ -1,4 +1,4 @@
-// Removed unnecessary functions and kept only those required for `custom.html`
+// Attach games to the global window object
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
 document.addEventListener("DOMContentLoaded", () => {

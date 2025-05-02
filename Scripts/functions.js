@@ -303,30 +303,35 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Add event delegation for suggestion clicks
-document.getElementById('whiteSuggestions').addEventListener('click', function(e) {
-  const suggestionItem = e.target.closest('.autocomplete-suggestion');
-  if (suggestionItem) {
-    const playerInput = document.getElementById('playerWhite');
-    const titleElement = document.getElementById('whiteTitle');
-    playerInput.value = suggestionItem.dataset.name;
-    titleElement.value = suggestionItem.dataset.title;
-    playerInput.dataset.title = suggestionItem.dataset.title;
-    this.innerHTML = '';
-  }
-});
+const whiteSuggestions = document.getElementById('whiteSuggestions');
+if (whiteSuggestions) {
+  whiteSuggestions.addEventListener('click', function(e) {
+    const suggestionItem = e.target.closest('.autocomplete-suggestion');
+    if (suggestionItem) {
+      const playerInput = document.getElementById('playerWhite');
+      const titleElement = document.getElementById('whiteTitle');
+      playerInput.value = suggestionItem.dataset.name;
+      titleElement.value = suggestionItem.dataset.title;
+      playerInput.dataset.title = suggestionItem.dataset.title;
+      this.innerHTML = '';
+    }
+  });
+}
 
-document.getElementById('blackSuggestions').addEventListener('click', function(e) {
-  const suggestionItem = e.target.closest('.autocomplete-suggestion');
-  if (suggestionItem) {
-    const playerInput = document.getElementById('playerBlack');
-    const titleElement = document.getElementById('blackTitle');
-    playerInput.value = suggestionItem.dataset.name;
-    titleElement.value = suggestionItem.dataset.title;
-    playerInput.dataset.title = suggestionItem.dataset.title;
-    this.innerHTML = '';
-  }
-});
+const blackSuggestions = document.getElementById('blackSuggestions');
+if (blackSuggestions) {
+  blackSuggestions.addEventListener('click', function(e) {
+    const suggestionItem = e.target.closest('.autocomplete-suggestion');
+    if (suggestionItem) {
+      const playerInput = document.getElementById('playerBlack');
+      const titleElement = document.getElementById('blackTitle');
+      playerInput.value = suggestionItem.dataset.name;
+      titleElement.value = suggestionItem.dataset.title;
+      playerInput.dataset.title = suggestionItem.dataset.title;
+      this.innerHTML = '';
+    }
+  });
+}
 
 // Add Escape key functionality to close suggestions
 document.addEventListener('keydown', function(e) {
@@ -342,12 +347,12 @@ document.addEventListener('click', function(e) {
   const blackSuggestions = document.getElementById('blackSuggestions');
   const playerWhite = document.getElementById('playerWhite');
   const playerBlack = document.getElementById('playerBlack');
-  
-  if (!playerWhite.contains(e.target) && !whiteSuggestions.contains(e.target)) {
+
+  if (whiteSuggestions && playerWhite && !playerWhite.contains(e.target) && !whiteSuggestions.contains(e.target)) {
     whiteSuggestions.innerHTML = '';
   }
-  
-  if (!playerBlack.contains(e.target) && !blackSuggestions.contains(e.target)) {
+
+  if (blackSuggestions && playerBlack && !playerBlack.contains(e.target) && !blackSuggestions.contains(e.target)) {
     blackSuggestions.innerHTML = '';
   }
 });
@@ -481,7 +486,6 @@ function deleteGame(id) {
 function displayGames(searchTerm = "") {
   const gamesList = document.getElementById("gamesList");
   if (!gamesList) {
-    console.warn("gamesList element not found in the DOM.");
     return;
   }
 

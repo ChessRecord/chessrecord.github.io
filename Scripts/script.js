@@ -1,8 +1,12 @@
-//########################################################################################
-//########################################################################################
-
 // Attach games to the global window object
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  const gameForm = document.getElementById("gameForm");
+  if (gameForm) {
+    gameForm.addEventListener("submit", addGame);
+  }
+});
 
 /*API REQUEST INFO*/
 const LOADER_CONFIG = {
@@ -122,7 +126,7 @@ async function addGame(event) {
     };
 
   // 🚀 **Add duplicate check here BEFORE pushing to games**
-  if (games.some(g => 
+  if (window.games.some(g => 
     (g.white === playerWhite || g.black === playerBlack) && 
     g.date === date && 
     g.tournament === tournament && 
@@ -133,25 +137,23 @@ async function addGame(event) {
   }
     window.games.push(game);
     saveGames();
-    displayGames();
     event.target.reset();
 
     hideLoader();
 
     alert(
-      `${toUnicodeVariant(game.whiteTitle, "bold sans", "sans")} ${playerWhite} vs ${toUnicodeVariant(game.blackTitle, "bold sans", "sans")} ${playerBlack} Game Added!`
+      `${toUnicodeVariant(
+        game.whiteTitle,
+        "bold sans",
+        "sans"
+      )} ${playerWhite} vs ${toUnicodeVariant(
+        game.blackTitle,
+        "bold sans",
+        "sans"
+      )} ${playerBlack} Game Added!`
     );
   } catch (error) {
     alert("Error fetching FIDE data. Please try again.");
     hideLoader();
   }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  const gameForm = document.getElementById("gameForm");
-  if (gameForm) {
-    gameForm.addEventListener("submit", addGame);
-  }
-});
-
-displayGames();
