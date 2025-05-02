@@ -1,7 +1,7 @@
 // Attach games to the global window object
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
   const gameForm = document.getElementById("gameForm");
   if (gameForm) {
     gameForm.addEventListener("submit", addGame);

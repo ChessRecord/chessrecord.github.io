@@ -1,7 +1,7 @@
 // Attach games to the global window object
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
   const gameForm = document.getElementById("gameForm");
   if (gameForm) {
     gameForm.addEventListener("submit", addGame);
@@ -153,7 +153,9 @@ async function addGame(event) {
       )} ${playerBlack} Game Added!`
     );
   } catch (error) {
-    alert("Error fetching FIDE data. Please try again.");
+    console.error("Error fetching FIDE data:", error);
     hideLoader();
+    alert("Error fetching FIDE data. Please try again.");
+    return; // Ensure the function exits on API error
   }
 }
