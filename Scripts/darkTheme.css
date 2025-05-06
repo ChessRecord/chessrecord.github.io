@@ -57,6 +57,16 @@ body.dark-theme {
   color: var(--white-d);
 }
 
+.dark-theme .meta-bar {
+  background-color: var(--black-2a);
+  border: 2px solid var(--grey-333);
+}
+
+.dark-theme .meta-bar #game-count, .dark-theme .meta-bar #tournament-count {
+  color: var(--white-e0);
+}
+
+
 /* ========================= */
 /* Input and Form Styles     */
 /* ========================= */
