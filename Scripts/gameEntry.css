@@ -190,3 +190,22 @@
 #searchInput {
   width: 100%;
 }
+
+.meta-bar {
+  position: fixed;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--small);
+  width: 100%;
+  padding: calc(var(--small)/1.5);
+  background: var(--white-container);
+  border-top: 2px var(--white-d) solid;
+}
+
+.meta-bar #game-count, .meta-bar #tournament-count {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--deep-blue);
+}

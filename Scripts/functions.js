@@ -485,9 +485,14 @@ function deleteGame(id) {
 
 function displayGames(searchTerm = "") {
   const gamesList = document.getElementById("gamesList");
+  const gameCount = document.getElementById("game-count");
+  const tournamentCount = document.getElementById("tournament-count");
   if (!gamesList) {
     return;
   }
+
+  gameCount.innerHTML = `${window.games.length} Games`;
+  tournamentCount.innerHTML = `${new Set(window.games.map(game => game.tournament)).size} Tournaments`;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
