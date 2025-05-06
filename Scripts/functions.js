@@ -485,14 +485,17 @@ function deleteGame(id) {
 
 function displayGames(searchTerm = "") {
   const gamesList = document.getElementById("gamesList");
-  const gameCount = document.getElementById("game-count");
-  const tournamentCount = document.getElementById("tournament-count");
+  const gameCountElement = document.getElementById("game-count");
+  const tournamentCountElement = document.getElementById("tournament-count");
   if (!gamesList) {
     return;
   }
 
-  gameCount.innerHTML = `${window.games.length} Games`;
-  tournamentCount.innerHTML = `${new Set(window.games.map(game => game.tournament)).size} Tournaments`;
+  const gameCount = window.games.length;
+  const tournamentCount = new Set(window.games.map(game => game.tournament)).size;
+  
+  gameCountElement.innerHTML = `${gameCount} ${gameCount === 1 ? 'Game' : 'Games'}`;
+  tournamentCountElement.innerHTML = `${tournamentCount} ${tournamentCount === 1 ? 'Tournament' : 'Tournaments'}`;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
