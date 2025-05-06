@@ -494,8 +494,8 @@ function displayGames(searchTerm = "") {
   const gameCount = window.games.length;
   const tournamentCount = new Set(window.games.map(game => game.tournament)).size;
   
-  gameCountElement.innerHTML = `${gameCount} ${gameCount === 1 ? 'Game' : 'Games'}`;
-  tournamentCountElement.innerHTML = `${tournamentCount} ${tournamentCount === 1 ? 'Tournament' : 'Tournaments'}`;
+  gameCountElement.innerHTML = gameCount === 0 ? 'No Games' : `${gameCount} ${gameCount === 1 ? 'Game' : 'Games'}`;
+  tournamentCountElement.innerHTML = tournamentCount === 0 ? '' : `${tournamentCount} ${tournamentCount === 1 ? 'Tournament' : 'Tournaments'}`;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
