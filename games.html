@@ -39,12 +39,6 @@
             <i class="fa-solid fa-ellipsis-vertical"></i>
           </div>
           <div class="dropdown">
-            <a onclick="exportJSON()" class="dropdown-item">
-              <div class="load">
-                <i class="fa-solid fa-download"></i>
-                <span style="font-size: var(--small);">Export Games</span>
-              </div>
-            </a>
             <a onclick="document.getElementById('fileInput').click();" class="dropdown-item">
               <div class="load">
                 <i class="fa-solid fa-upload"></i>
@@ -57,6 +51,12 @@
                 style="display: none"
                 onchange="importJSON(event)"
               />
+            </a>
+            <a onclick="exportJSON()" class="dropdown-item">
+              <div class="load">
+                <i class="fa-solid fa-download"></i>
+                <span style="font-size: var(--small);">Export Games</span>
+              </div>
             </a>
           </div>
         </div>
