@@ -1,0 +1,11 @@
+.pairings {
+    position: relative;
+    padding-top: var(--medium);
+}
+
+.pairings #player-name {
+    font-size: var(--large);
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: var(--small);
+}
