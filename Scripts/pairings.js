@@ -4,7 +4,7 @@ function expectedScore(myRating, oppRating) {
 
 function calcChange(myRating, oppRating, result, k = 40) {
   const E = expectedScore(myRating, oppRating);
-  return Math.round(k * (result - E));
+  return Math.round(k * (result - E) * 10) / 10;
 }
 
 async function scrapeChessResults(url) {
