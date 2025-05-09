@@ -28,21 +28,22 @@ async function scrapeChessResults(url) {
 
       if (cells.length >= 9) {
         const pairing = {
-            round: cells[0],
-            boardNo: cells[1],
-            playerStartNo: cells[2],
-            opponentTitle: cells[3],
-            opponentName: cells[4],
-            opponentRating: parseInt(cells[5]) || 0,
-            opponentClub: cells[6],
-            opponentPoints: cells[7],
-            result: cells[8],
-            playerColor: $(row).find("td:eq(8) div.FarbesT").length > 0 
-              ? "Black" 
-              : $(row).find("td:eq(8) div.FarbewT").length > 0 
-              ? "White" 
-              : ""
-        };          
+          round: cells[0],
+          boardNo: cells[1],
+          playerStartNo: cells[2],
+          opponentTitle: cells[3],
+          opponentName: cells[4],
+          opponentRating: parseInt(cells[5]) || 0,
+          opponentClub: cells[6],
+          opponentPoints: cells[7],
+          result: cells[8],
+          playerColor:
+            $(row).find("td:eq(8) div.FarbesT").length > 0
+              ? "Black"
+              : $(row).find("td:eq(8) div.FarbewT").length > 0
+              ? "White"
+              : "",
+        };
 
         pairings.push(pairing);
       }
@@ -64,7 +65,7 @@ async function scrapeChessResults(url) {
     "Club/City",
     "Ident-Number",
     "Fide-ID",
-    "Year of birth"
+    "Year of birth",
   ]);
 
   const infoRows = $html.find("table").eq(3).find("tr");
@@ -83,58 +84,127 @@ async function scrapeChessResults(url) {
   return { playerInfo, pairings };
 }
 
-async function handleFetch() {
-  const url = document.getElementById("url-input").value.trim();
-  const summary = document.getElementById("rating-summary");
-  const error = document.getElementById("error");
-
-  summary.textContent = "";
-  error.textContent = "";
-
+// Main function to fetch and return variables for all rounds
+async function getChessResults(url) {
   if (!url.includes("chess-results.com")) {
-    error.textContent = "❌ Please enter a valid Chess-Results URL.";
-    return;
+    throw new Error("Please enter a valid Chess-Results URL.");
   }
 
-  try {
-    const { playerInfo, pairings } = await scrapeChessResults(url);
-    //output.textContent = JSON.stringify({ playerInfo, pairings }, null, 2);
+  const { playerInfo, pairings } = await scrapeChessResults(url);
 
-    const rating = parseInt(playerInfo["Rating"]);
-    const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(",", "."));
-    if (isNaN(rating)) {
-      error.textContent = "❌ Could not detect your rating from the page.";
-      return;
+  const rating = parseInt(playerInfo["Rating"]);
+  const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(",", "."));
+  if (isNaN(rating)) {
+    throw new Error("Could not detect your rating from the page.");
+  }
+
+  // Calculate rating change info for all rounds
+  const rounds = pairings.map((pairing) => {
+    const oppRating = pairing.opponentRating;
+    return {
+      round: pairing.round,
+      boardNo: pairing.boardNo,
+      playerStartNo: pairing.playerStartNo,
+      opponentTitle: pairing.opponentTitle,
+      opponentName: pairing.opponentName,
+      opponentRating: oppRating,
+      opponentClub: pairing.opponentClub,
+      opponentPoints: pairing.opponentPoints.replace(",5", "&#189;"),
+      result: pairing.result,
+      playerColor: pairing.playerColor,
+      win: calcChange(rating, oppRating, 1),
+      draw: calcChange(rating, oppRating, 0.5),
+      loss: calcChange(rating, oppRating, 0),
+    };
+  });
+
+  return {
+    playerInfo,
+    rating,
+    rtgchg,
+    rounds,
+  };
+}
+
+// Render rounds data into #pairings-table in the required format
+function renderPairingsTable(rounds) {
+  const $table = $("#pairings-table");
+  // Build thead only once
+  let tableHtml = `
+    <table>
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>Board</th>
+          <th>Start</th>
+          <th>Name</th>
+          <th>Rating</th>
+          <th>Club/City</th>
+          <th>Points</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  rounds.forEach((round) => {
+    let colorSpan = "";
+    if (round.playerColor === "Black") {
+      colorSpan = '<span class="box-black"></span>';
+    } else if (round.playerColor === "White") {
+      colorSpan = '<span class="box-white"></span>';
     }
 
-    const lastOpponent = pairings[pairings.length - 1];
-    if (!lastOpponent) {
-      summary.textContent = "No opponents found.";
-      return;
+    let resultDisplay = round.result;
+    if (resultDisplay === "0.5" || resultDisplay === "½") {
+      resultDisplay = "&#189;";
     }
 
-    const oppRating = lastOpponent.opponentRating;
-    const win = calcChange(rating, oppRating, 1);
-    const draw = calcChange(rating, oppRating, 0.5);
-    const loss = calcChange(rating, oppRating, 0);
-
-    summary.innerHTML = `
-    <span class="inlineForm" style="width: 100%; display: flex;gap:5rem;align-items: center;">
-    <span>
-      🧠 ${playerInfo["Name"]}<span class="player-rating">${rating}</span><br>
-      🎯 Opponent: ${lastOpponent.opponentTitle ? `<span class="title">${lastOpponent.opponentTitle}</span> ` : ''}${lastOpponent.opponentName} <span class="player-rating">${oppRating}</span><br>
-      ♟️ Board: <strong>${lastOpponent.boardNo}</strong><br>
-      🌗 Color: <strong>${lastOpponent.playerColor}</strong><br>
-    </span>
-    <span style="text-align: right;">
-      🏆 Win: <strong>${rating + rtgchg + win}</strong> ${win >= 0 ? "+ " : "- "}${Math.abs(win)}<br>
-      🤝 Draw: <strong>${rating + rtgchg + draw}</strong> ${draw >= 0 ? "+ " : "- "}${Math.abs(draw)}<br>
-      🏳️ Loss: <strong>${rating + rtgchg + loss}</strong> ${loss >= 0 ? "+ " : "- "}${Math.abs(loss)}<br>
-    </span>
-    </span>
+    tableHtml += `
+      <tr>
+        <td>${round.round}</td>
+        <td>${round.boardNo}</td>
+        <td>${round.playerStartNo}</td>
+        <td><span class="title">${round.opponentTitle}</span> ${round.opponentName}</td>
+        <td>${round.opponentRating}</td>
+        <td>${round.opponentClub}</td>
+        <td>${round.opponentPoints}</td>
+        <td class="result-cell">${colorSpan}${resultDisplay}</td>
+      </tr>
     `;
+  });
+
+  tableHtml += `
+      </tbody>
+    </table>
+    <div class="note">
+      *) Rating difference of more than 400. It was limited to 400.
+    </div>
+  `;
+
+  $table.html(tableHtml);
+}
+
+// Example usage for UI (call this from your form/button event)
+async function showPairingsTableFromInput() {
+  const url = $("#url-input").val().trim();
+  try {
+    const data = await getChessResults(url);
+    renderPairingsTable(data.rounds);
   } catch (err) {
-    error.textContent = "❌ Error fetching or parsing data. See console.";
-    console.error(err);
+    alert(err.message);
   }
 }
+
+// Optionally, attach to form submit
+$(function () {
+  $("#chess-resultsForm").on("submit", function (e) {
+    e.preventDefault();
+    showPairingsTableFromInput();
+  });
+});
+
+// Example usage:
+// getChessResults("https://chess-results.com/tnr123456.aspx?lan=1&art=9&snr=1")
+//   .then(res => console.log(JSON.stringify(res, null, 2)))
+//   .catch(err => console.error(err));
