@@ -94,6 +94,11 @@ button[type="submit"] {
   gap: var(--medium);
 }
 
+#searchURL {
+  border-radius: 100px;
+  width: fit-content !important;
+}
+
 /* Inline Form and Input Specific Styles */
 .inlineForm {
   display: flex;

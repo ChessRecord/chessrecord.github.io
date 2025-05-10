@@ -3,6 +3,7 @@ function expectedScore(myRating, oppRating) {
 }
 
 function calcChange(myRating, oppRating, result, k = 40) {
+  if (oppRating === 0) return "";
   const E = expectedScore(myRating, oppRating);
   return Math.round(k * (result - E) * 10) / 10;
 }
@@ -112,7 +113,7 @@ async function getChessResults(url) {
       opponentPoints: pairing.opponentPoints.replace(",5", "&#189;"),
       result: pairing.result,
       playerColor: pairing.playerColor,
-      win: calcChange(rating, oppRating, 1),
+      win: "+" + calcChange(rating, oppRating, 1),
       draw: calcChange(rating, oppRating, 0.5),
       loss: calcChange(rating, oppRating, 0),
     };
@@ -166,7 +167,18 @@ function renderPairingsTable(rounds) {
         <td>${round.boardNo}</td>
         <td>${round.playerStartNo}</td>
         <td><span class="title">${round.opponentTitle}</span> ${round.opponentName}</td>
-        <td>${round.opponentRating}</td>
+        <td>
+        ${
+          round.opponentRating !== 0
+            ? `<span class="tooltip" style="height: 100%;width: 100%;">
+                ${round.opponentRating}
+                <span class="tooltiptext">
+                  Win: ${round.win}<br>Draw: ${round.draw}<br>Loss: ${round.loss}
+                </span>
+              </span>`
+            : `${round.opponentRating}`
+        }
+        </td>
         <td>${round.opponentClub}</td>
         <td>${round.opponentPoints}</td>
         <td class="result-cell">${colorSpan}${resultDisplay}</td>
@@ -220,25 +232,14 @@ $(function () {
     $("#url-input").val(storedUrl);
   }
 
-  // Track last rendered value
-  let lastRenderedUrl = null;
-
   $("#chess-resultsForm").on("submit", function (e) {
     e.preventDefault();
-    const inputVal = $("#url-input").val().trim();
-    const lastVal = window.localStorage.getItem("chessResultsUrl") || "";
-    // Only block if input matches localStorage AND table is already rendered for this value
-    if (inputVal === lastVal && inputVal === lastRenderedUrl) {
-      // No change, do not submit again
-      return;
-    }
-    showPairingsTableFromInput().then(() => {
-      lastRenderedUrl = inputVal;
-    });
+    // Removed check that disables repeated submissions
+    showPairingsTableFromInput();
   });
 });
 
 // Example usage:
 // getChessResults("https://chess-results.com/tnr123456.aspx?lan=1&art=9&snr=1")
 //   .then(res => console.log(JSON.stringify(res, null, 2)))
-//   .catch(err => console.error(err));
+//   .catch(err => console.error(err);

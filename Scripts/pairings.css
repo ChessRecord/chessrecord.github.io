@@ -10,7 +10,7 @@ table {
     border-spacing: 0;
     width: 100%;
     border-radius: var(--border-radius);
-    overflow: hidden; /* Ensures children respect border-radius */
+    /* overflow: hidden;  <-- Remove or comment out this line */
     border: 2px var(--white-d) solid; /* Outer border */
 }
 .dark-theme table {
@@ -117,4 +117,8 @@ tr:nth-child(even) {
     border-radius: 0.15em;
     vertical-align: middle;
     box-shadow: 0 0 0 1px #eee inset;
+}
+
+.tooltiptext {
+    transform: translate(12.5%, -25%);
 }
