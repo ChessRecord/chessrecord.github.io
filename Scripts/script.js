@@ -44,13 +44,13 @@ async function fide_api(FIDE) {
 
 async function addGame(event) {
   event.preventDefault(); // Prevent form submission
-  showLoader();
+  showLoader("#addGame span");
 
   const whiteFIDE = parseInt(document.getElementById("whiteFIDE").value.trim());
   const blackFIDE = parseInt(document.getElementById("blackFIDE").value.trim());
 
   if (isNaN(whiteFIDE) || isNaN(blackFIDE)) {
-    hideLoader();
+    hideLoader("#addGame span");
     alert("Invalid FIDE ID(s). Please enter a valid ID.");
     return;
   }
@@ -59,7 +59,7 @@ async function addGame(event) {
 
   if (result === "0") {
     alert("Please select a result!");
-    hideLoader();
+    hideLoader("#addGame span");
     return;
   }
 
@@ -68,17 +68,17 @@ async function addGame(event) {
     let [playerBlack, blackTitle, blackStandard, blackRapid, blackBlitz] = await fide_api(blackFIDE);
 
     if (playerWhite === "N/A" && playerBlack === "N/A") {
-      hideLoader();
+      hideLoader("#addGame span");
       alert("Both players have invalid FIDE IDs. Please try again.");
       return;
     }
     if (playerWhite === "N/A") {
-      hideLoader();
+      hideLoader("#addGame span");
       alert("Invalid FIDE ID for White player. Please try again.");
       return;
     }
     if (playerBlack === "N/A") {
-      hideLoader();
+      hideLoader("#addGame span");
       alert("Invalid FIDE ID for Black player. Please try again.");
       return;
     }
@@ -131,7 +131,7 @@ async function addGame(event) {
     g.date === date && 
     g.tournament === tournament && 
     g.round === round)) {
-    hideLoader();
+    hideLoader("#addGame span");
     alert("Game already exists or player conflict in this round!");
     return;
   }
@@ -139,7 +139,7 @@ async function addGame(event) {
     saveGames();
     event.target.reset();
 
-    hideLoader();
+    hideLoader("#addGame span");
 
     alert(
       `${toUnicodeVariant(
@@ -154,7 +154,7 @@ async function addGame(event) {
     );
   } catch (error) {
     console.error("Error fetching FIDE data:", error);
-    hideLoader();
+    hideLoader("#addGame span");
     alert("Error fetching FIDE data. Please try again.");
     return; // Ensure the function exits on API error
   }

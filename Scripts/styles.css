@@ -86,7 +86,7 @@ button {
   transition: background-color 0.3s ease;
 }
 
-#addGame {
+button[type="submit"] {
   height: calc(1.25 * (var(--small) + var(--normal)));
   display: flex;
   align-items: center;

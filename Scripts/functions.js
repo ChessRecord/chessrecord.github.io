@@ -358,14 +358,17 @@ document.addEventListener('click', function(e) {
 });
 
 /*LOADER FUNCTIONS*/
-function showLoader() {
+function showLoader(target) {
+  const el = document.querySelector(target);
+  el._oldLoaderValue = el.innerHTML; // Store as a property on the element
   document.getElementById("loader").style.display = "inline";
-  document.querySelector("#addGame span").innerHTML = "Loading";
+  el.innerHTML = "Loading";
 }
 
-function hideLoader() {
+function hideLoader(target) {
+  const el = document.querySelector(target);
   document.getElementById("loader").style.display = "none";
-  document.querySelector("#addGame span").innerHTML = "Add Game";
+  el.innerHTML = el._oldLoaderValue; // Retrieve the stored value
 }
 
 function abbreviateTitle(title) {

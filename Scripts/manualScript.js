@@ -10,13 +10,13 @@ window.addEventListener("load", () => {
 
 function addGame(event) {
   event.preventDefault(); // Prevent form submission
-  showLoader();
+  showLoader("#addGame span");
 
   const result = document.getElementById("result").value;
 
   if (result === "0") {
     alert("Please select a result!");
-    hideLoader();
+    hideLoader("#addGame span");
     return;
   }
 
@@ -53,7 +53,7 @@ function addGame(event) {
     g.date === date && 
     g.tournament === tournament && 
     g.round === round)) {
-    hideLoader();
+    hideLoader("#addGame span");
     alert("Game already exists or player conflict in this round!");
     return;
   }
@@ -61,7 +61,7 @@ function addGame(event) {
   window.games.push(game);
   saveGames();
   event.target.reset();
-  hideLoader();
+  hideLoader("#addGame span");
 
   alert(
     `${toUnicodeVariant(

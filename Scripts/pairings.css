@@ -46,10 +46,10 @@ tbody tr:last-child td {
     border-bottom: none;
 }
 th:first-child {
-    border-top-left-radius: var(--border-radius);
+    border-top-left-radius: calc(var(--border-radius)-3px);
 }
 th:last-child {
-    border-top-right-radius: var(--border-radius);
+    border-top-right-radius: calc(var(--border-radius)-3px);
 }
 tr:last-child td:first-child {
     border-bottom-left-radius: var(--border-radius);

@@ -200,10 +200,13 @@ async function showPairingsTableFromInput() {
     }
   }
   if (!url) return;
+  showLoader("#searchURL span");
   try {
     const data = await getChessResults(url);
     renderPairingsTable(data.rounds);
+    hideLoader("#searchURL span");
   } catch (err) {
+    hideLoader("#searchURL span");
     alert(err.message);
   }
 }
@@ -215,9 +218,22 @@ $(function () {
   if (storedUrl) {
     $("#url-input").val(storedUrl);
   }
+
+  // Track last rendered value
+  let lastRenderedUrl = null;
+
   $("#chess-resultsForm").on("submit", function (e) {
     e.preventDefault();
-    showPairingsTableFromInput();
+    const inputVal = $("#url-input").val().trim();
+    const lastVal = window.localStorage.getItem("chessResultsUrl") || "";
+    // Only block if input matches localStorage AND table is already rendered for this value
+    if (inputVal === lastVal && inputVal === lastRenderedUrl) {
+      // No change, do not submit again
+      return;
+    }
+    showPairingsTableFromInput().then(() => {
+      lastRenderedUrl = inputVal;
+    });
   });
 });
 
