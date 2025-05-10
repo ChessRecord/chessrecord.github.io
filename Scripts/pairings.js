@@ -8,7 +8,7 @@ function calcChange(myRating, oppRating, result, k = 40) {
 }
 
 async function scrapeChessResults(url) {
-  const proxy = "https://api.allorigins.win/raw?url=";
+  const proxy = "https://proxy.caticuchess.workers.dev/?url=";
   const fullUrl = proxy + encodeURIComponent(url);
 
   const response = await fetch(fullUrl);
@@ -187,7 +187,19 @@ function renderPairingsTable(rounds) {
 
 // Example usage for UI (call this from your form/button event)
 async function showPairingsTableFromInput() {
-  const url = $("#url-input").val().trim();
+  let url = $("#url-input").val().trim();
+  // Save to localStorage
+  if (url) {
+    window.localStorage.setItem("chessResultsUrl", url);
+  } else {
+    // If input is empty, try to load from localStorage
+    const storedUrl = window.localStorage.getItem("chessResultsUrl");
+    if (storedUrl) {
+      url = storedUrl;
+      $("#url-input").val(url);
+    }
+  }
+  if (!url) return;
   try {
     const data = await getChessResults(url);
     renderPairingsTable(data.rounds);
@@ -198,6 +210,11 @@ async function showPairingsTableFromInput() {
 
 // Optionally, attach to form submit
 $(function () {
+  // On page load, fill input from localStorage if available
+  const storedUrl = window.localStorage.getItem("chessResultsUrl");
+  if (storedUrl) {
+    $("#url-input").val(storedUrl);
+  }
   $("#chess-resultsForm").on("submit", function (e) {
     e.preventDefault();
     showPairingsTableFromInput();
