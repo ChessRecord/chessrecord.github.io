@@ -207,7 +207,8 @@ async function showPairingsTableFromInput() {
     hideLoader("#searchURL span");
   } catch (err) {
     hideLoader("#searchURL span");
-    alert(err.message);
+    alert("No Pairings found for this URL.");
+    console.error(err);
   }
 }
 
