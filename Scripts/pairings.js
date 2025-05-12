@@ -16,32 +16,67 @@ async function scrapeChessResults(url) {
   const htmlText = await response.text();
 
   const $html = $("<div>").html(htmlText);
-  const rows = $html.find("table").eq(5).find("tr");
+  const table = $html.find("table").eq(5);
+  const rows = table.find("tr");
+
+  // Extract header keys from <th>
+  const headerCells = table.find("tr").first().find("th");
+  let headerKeys = headerCells
+    .map((_, th) => {
+      const txt = $(th).text().trim();
+      return txt === "" ? "Title" : txt;
+    })
+    .get();
+
+  // Map header keys to normalized property names
+  const keyMap = {
+    "Rd.": "round",
+    "Bo.": "boardNo",
+    "SNo": "playerStartNo",
+    "Title": "opponentTitle",
+    "Name": "opponentName",
+    "Rtg": "opponentRating",
+    "FED": "opponentFederation",
+    "Club/City": "opponentClub",
+    "Pts.": "opponentPoints",
+    "Res.": "result",
+  };
 
   const pairings = [];
 
   rows.each((i, row) => {
+    // Skip header row
+    if (i === 0) return;
+    // Only process odd rows (as before)
     if (i % 2 === 1) {
       const cells = $(row)
         .find("td")
         .map((_, cell) => $(cell).text().trim())
         .get();
 
-      if (cells.length >= 9) {
+      if (cells.length >= headerKeys.length) {
+        // Build a mapping of headerKey -> cell value
+        const rowObj = {};
+        headerKeys.forEach((key, idx) => {
+          rowObj[key] = cells[idx];
+        });
+
+        // Compose pairing object using mapped keys
         const pairing = {
-          round: cells[0],
-          boardNo: cells[1],
-          playerStartNo: cells[2],
-          opponentTitle: cells[3],
-          opponentName: cells[4],
-          opponentRating: parseInt(cells[5]) || 0,
-          opponentClub: cells[6],
-          opponentPoints: cells[7],
-          result: cells[8],
+          round: rowObj["Rd."],
+          boardNo: rowObj["Bo."],
+          playerStartNo: rowObj["SNo"],
+          opponentTitle: rowObj["Title"],
+          opponentName: rowObj["Name"],
+          opponentRating: parseInt(rowObj["Rtg"]) || 0,
+          opponentFederation: rowObj["FED"],
+          opponentClub: rowObj["Club/City"],
+          opponentPoints: rowObj["Pts."],
+          result: rowObj["Res."],
           playerColor:
-            $(row).find("td:eq(8) div.FarbesT").length > 0
+            $(row).find("td:eq(" + (headerKeys.indexOf("Res.")) + ") div.FarbesT").length > 0
               ? "Black"
-              : $(row).find("td:eq(8) div.FarbewT").length > 0
+              : $(row).find("td:eq(" + (headerKeys.indexOf("Res.")) + ") div.FarbewT").length > 0
               ? "White"
               : "",
         };
