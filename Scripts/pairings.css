@@ -1,15 +1,13 @@
 div.table {
-    display: flex;
+    display: block;
     overflow-x: auto;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
 }
 table {
     margin-top: var(--normal);
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
+    min-width: max-content; /* Allow table to expand and be scrollable */
     border-radius: var(--border-radius);
     border: 2px var(--white-d) solid; /* Outer border */
 }
@@ -91,6 +89,7 @@ tr:nth-child(even) {
     font-size: 0.95em;
     color: #444;
     margin-top: 12px;
+    text-align: center;
 }
 
 .dark-theme .note {
