@@ -9,8 +9,8 @@ function calcChange(myRating, oppRating, result, k = 40) {
 }
 
 async function scrapeChessResults(url) {
-  const proxy = "https://proxy.caticuchess.workers.dev/?url=";
-  const fullUrl = proxy + encodeURIComponent(url);
+  const proxy = "https://proxy.caticuchess.workers.dev/";
+  const fullUrl = decodeURIComponent(proxy + encodeURIComponent(url));
 
   const response = await fetch(fullUrl);
   const htmlText = await response.text();

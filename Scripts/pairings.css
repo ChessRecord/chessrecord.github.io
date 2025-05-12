@@ -1,5 +1,6 @@
 div.table {
     display: flex;
+    overflow-x: auto;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -10,7 +11,6 @@ table {
     border-spacing: 0;
     width: 100%;
     border-radius: var(--border-radius);
-    /* overflow: hidden;  <-- Remove or comment out this line */
     border: 2px var(--white-d) solid; /* Outer border */
 }
 .dark-theme table {
@@ -20,6 +20,7 @@ th, td {
     border: 1px var(--white-d) solid;
     padding: 6px 10px;
     text-align: center;
+    white-space: nowrap;
 }
 
 .dark-theme th, .dark-theme td {
