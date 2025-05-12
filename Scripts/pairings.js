@@ -144,6 +144,7 @@ async function getChessResults(url) {
       opponentTitle: pairing.opponentTitle,
       opponentName: pairing.opponentName,
       opponentRating: oppRating,
+      opponentFederation: pairing.opponentFederation,
       opponentClub: pairing.opponentClub,
       opponentPoints: pairing.opponentPoints.replace(",5", "&#189;"),
       result: pairing.result,
@@ -179,6 +180,9 @@ async function getChessResults(url) {
 // Render rounds data into #pairings-table in the required format
 function renderPairingsTable(rounds) {
   const $table = $("#pairings-table");
+  // Check if any round has a federation value
+  const hasFederation = rounds.some(r => r.opponentFederation && r.opponentFederation.trim() !== "");
+
   // Build thead only once
   let tableHtml = `
     <table>
@@ -189,6 +193,7 @@ function renderPairingsTable(rounds) {
           <th>Start</th>
           <th>Name</th>
           <th>Rating</th>
+          ${hasFederation ? "<th>Federation</th>" : ""}
           <th>Club/City</th>
           <th>Points</th>
           <th>Result</th>
@@ -215,9 +220,7 @@ function renderPairingsTable(rounds) {
         <td>${round.round}</td>
         <td>${round.boardNo}</td>
         <td>${round.playerStartNo}</td>
-        <td><span class="title">${round.opponentTitle}</span> ${
-      round.opponentName
-    }</td>
+        <td><span class="title">${round.opponentTitle}</span> ${round.opponentName}</td>
         <td>
         ${
           round.opponentRating !== 0
@@ -230,6 +233,7 @@ function renderPairingsTable(rounds) {
             : `${round.opponentRating}`
         }
         </td>
+        ${hasFederation ? `<td>${round.opponentFederation || ""}</td>` : ""}
         <td>${round.opponentClub}</td>
         <td>${round.opponentPoints}</td>
         <td class="result-cell">${colorSpan}${resultDisplay}</td>
