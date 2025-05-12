@@ -113,9 +113,23 @@ async function getChessResults(url) {
       opponentPoints: pairing.opponentPoints.replace(",5", "&#189;"),
       result: pairing.result,
       playerColor: pairing.playerColor,
-      win: "+" + calcChange(rating, oppRating, 1),
-      draw: calcChange(rating, oppRating, 0.5),
-      loss: calcChange(rating, oppRating, 0),
+      win:
+        calcChange(rating, oppRating, 1) === ""
+          ? ""
+          : (calcChange(rating, oppRating, 1) >= 0 ? "+" : "-") +
+            Math.abs(calcChange(rating, oppRating, 1)),
+
+      draw:
+        calcChange(rating, oppRating, 0.5) === ""
+          ? ""
+          : (calcChange(rating, oppRating, 0.5) >= 0 ? "+" : "-") +
+            Math.abs(calcChange(rating, oppRating, 0.5)),
+
+      loss:
+        calcChange(rating, oppRating, 0) === ""
+          ? ""
+          : (calcChange(rating, oppRating, 0) >= 0 ? "+" : "-") +
+            Math.abs(calcChange(rating, oppRating, 0)),
     };
   });
 
@@ -166,7 +180,9 @@ function renderPairingsTable(rounds) {
         <td>${round.round}</td>
         <td>${round.boardNo}</td>
         <td>${round.playerStartNo}</td>
-        <td><span class="title">${round.opponentTitle}</span> ${round.opponentName}</td>
+        <td><span class="title">${round.opponentTitle}</span> ${
+      round.opponentName
+    }</td>
         <td>
         ${
           round.opponentRating !== 0
