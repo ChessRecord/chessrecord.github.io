@@ -10,13 +10,13 @@ function calcChange(myRating, oppRating, result, k = 40) {
 
 async function scrapeChessResults(url) {
   const proxy = "https://proxy.caticuchess.workers.dev/";
-  const fullUrl = decodeURIComponent(proxy + encodeURIComponent(url));
+  const fullUrl = proxy + url;
 
   const response = await fetch(fullUrl);
   const htmlText = await response.text();
 
   const $html = $("<div>").html(htmlText);
-  const rows = $html.find("table").eq(4).find("tr");
+  const rows = $html.find("table").eq(5).find("tr");
 
   const pairings = [];
 
@@ -69,7 +69,7 @@ async function scrapeChessResults(url) {
     "Year of birth",
   ]);
 
-  const infoRows = $html.find("table").eq(3).find("tr");
+  const infoRows = $html.find("table").eq(4).find("tr");
 
   infoRows.each((_, row) => {
     const cells = $(row).find("td");
