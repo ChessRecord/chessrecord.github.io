@@ -71,6 +71,7 @@ body.dark-theme {
 /* Input and Form Styles     */
 /* ========================= */
 .dark-theme input,
+.dark-theme textarea,
 .dark-theme select,
 .dark-theme button {
   background-color: var(--black-2c);

@@ -77,6 +77,12 @@ input:focus::placeholder {
   color: transparent;
 }
 
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 60vh;
+}
+
 button {
   background-color: var(--orange);
   color: var(--white-container);
