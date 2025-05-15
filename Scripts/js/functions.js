@@ -171,6 +171,8 @@ function getTimeControlCategory(timeControl) {
 
   // Classify time control based on initial time and increment
   const classifyTimeControl = (initial, increment) => {
+    if (!initial || isNaN(initial) || initial < 0) return "Unknown";
+    if (isNaN(increment) || increment < 0) return "Unknown";
     // Convert everything to seconds for easier calculation
     const initialSeconds = initial * 60;
     const incrementSeconds = increment;
@@ -539,13 +541,24 @@ function displayGames(searchTerm = "") {
                           <span class="game-time">
                           ${(() => {
                             const category = getTimeControlCategory(game.time);
-                            if (category === "Blitz") return '<i class="fa-solid fa-bolt-lightning"></i><span style="display: inline-block;width: 0.5rem;"></span>';
-                            if (category === "Rapid") return '<i class="fa-solid fa-clock"></i><span style="display: inline-block;width: 0.5rem;"></span>';
-                            if (category === "Classical") return '<i class="fa-solid fa-hourglass-half"></i><span style="display: inline-block;width: 0.5rem;"></span>';
-                            return "";
-                          })()}${game.time} • ${getTimeControlCategory(game.time)}
-                          </span>
-                          | <strong>${game.date}</strong>
+                            switch (category) {
+                              case "Blitz":
+                                return '<i class="fa-solid fa-bolt-lightning"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                              case "Rapid":
+                                return '<i class="fa-solid fa-clock"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                              case "Classical":
+                                return '<i class="fa-solid fa-hourglass-half"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                              default:
+                                return "";
+                            }
+                          })()}
+                          ${(() => {
+                            const category = getTimeControlCategory(game.time);
+                            return category === "Unknown"
+                              ? '</span>'
+                              : `${game.time} • ${category}</span> | `;
+                          })()}
+                          ${game.date ? `<strong>${game.date}</strong>` : ""}
                         </span>
                     </div>
                     <div class="player-details">
@@ -555,7 +568,7 @@ function displayGames(searchTerm = "") {
                             </span>
                       </div>
                       <div class="game-result">
-                        <strong>${game.result}</strong>
+                        <strong>${formatResult(game.result)}</strong>
                       </div>
                       <div class="player-right">
                         <span>
@@ -574,4 +587,13 @@ function displayGames(searchTerm = "") {
     .join("");
 
   refreshTitle();
+}
+
+function formatResult(result) {
+  if (!result) return '*';
+  // Replace with spaced versions
+  let formatted = result.replace('1-0', '1 - 0').replace('0-1', '0 - 1').replace('1/2-1/2', '1/2 - 1/2');
+  // Replace 1/2 with fraction ½
+  formatted = formatted.replace(/1\/2/g, '½');
+  return formatted;
 }

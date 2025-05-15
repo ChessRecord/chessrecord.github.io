@@ -11,9 +11,7 @@ function pgnToJson(pgn) {
 
     // Result conversion
     let resultStr = getTag("Result");
-    if (resultStr === "1-0") resultStr = "1 - 0";
-    else if (resultStr === "0-1") resultStr = "0 - 1";
-    else if (resultStr === "1/2-1/2") resultStr = "½ - ½";
+    if (resultStr === "1/2-1/2") resultStr = "½-½";
 
     result.push({
       white: getTag("White"),
