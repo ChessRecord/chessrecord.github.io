@@ -103,6 +103,9 @@ async function addGame(event) {
     } else if (getTimeControlCategory(time) === "Blitz") {
       whiteRating = whiteBlitz;
       blackRating = blackBlitz;
+    } else {
+      whiteRating = whiteStandard;
+      blackRating = blackStandard;
     }
 
     const tournament = document.getElementById("tournament").value;

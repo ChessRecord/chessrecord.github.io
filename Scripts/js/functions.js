@@ -534,8 +534,19 @@ function displayGames(searchTerm = "") {
               <a href="${game.gameLink}" target="_blank" class="game-entry-link">
                 <div class="game-entry" data-game-id="${game.id}">
                     <div class="game-details" style="align-items: center;">
-                        <div class="game-tournament"><span class="game-round">${game.round}</span><strong>${game.tournament}</strong></div>
-                        <span class="entry-meta"><span class="game-time">${game.time} • ${getTimeControlCategory(game.time)}</span> | <strong>${game.date}</strong></span>
+                        <div class="game-tournament"><span class="game-round">${game.round}</span><strong>Round ${game.round}</strong></div>
+                        <span class="entry-meta">
+                          <span class="game-time">
+                          ${(() => {
+                            const category = getTimeControlCategory(game.time);
+                            if (category === "Blitz") return '<i class="fa-solid fa-bolt-lightning"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                            if (category === "Rapid") return '<i class="fa-solid fa-clock"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                            if (category === "Classical") return '<i class="fa-solid fa-chess-board"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                            return "";
+                          })()}${game.time} • ${getTimeControlCategory(game.time)}
+                          </span>
+                          | <strong>${game.date}</strong>
+                        </span>
                     </div>
                     <div class="player-details">
                       <div class="player-left">
