@@ -26,87 +26,50 @@
   <body>
     <div class="container">
       <h1>Chess Games Tracker</h1>
-        <form id="gameForm" onsubmit="return false;">
-          <div class="inlineForm">
-            <input
-              type="number"
-              id="whiteFIDE"
-              class="flex"
-              placeholder="White Player FIDE ID"
-              required
-              title="Please enter a valid FIDE ID"
-            />
-          </div>
-          <div class="inlineForm">
-            <input
-              type="number"
-              id="blackFIDE"
-              class="flex"
-              placeholder="Black Player FIDE ID"
-              required
-              title="Please enter a valid FIDE ID"
-            />
-          </div>
-          <div class="custom-select">
-            <select id="result" required title="Please select the game result">
-              <option value="0">Result</option>
-              <option value="1 - 0">1 - 0</option>
-              <option value="0 - 1">0 - 1</option>
-              <option value="½ - ½">½ - ½</option>
-            </select>
-          </div>
-          <div class="inlineForm">
+        <div class="filters">
+          <div id="search">
             <input
               type="text"
-              id="tournament"
-              placeholder="Tournament"
-              class="flex"
-              required
-              title="Please enter the tournament name"
-            />
-            <input
-              type="number"
-              id="round"
-              placeholder="Round"
-              min="1"
-              class="flex"
-              required
-              title="Please enter the round number"
-            />
-            <input
-              type="text"
-              id="time"
-              placeholder="Time"
-              class="flex"
-              required
-              title="Please enter the time control"
+              class="fontawesome"
+              id="searchInput"
+              placeholder="  Search by player or tournament name"
             />
           </div>
-          <input
-            type="date"
-            id="date"
-            required
-            title="Please enter the date of the game"
-          />
-          <input
-            type="url"
-            id="gameLink"
-            placeholder="Game Link"
-            required
-            title="Please enter the game link"
-          />
-          <button type="submit" id="addGame">
-            <span>Add Game</span>
-            <div class="loader" id="loader"></div>
-          </button>
-        </form>
+          <div class="options">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </div>
+          <div class="dropdown">
+            <a onclick="document.getElementById('fileInput').click();" class="dropdown-item">
+              <div class="load">
+                <i class="fa-solid fa-upload"></i>
+                <span style="font-size: var(--small);">Import Games</span>
+              </div>
+              <input
+                type="file"
+                id="fileInput"
+                accept=".json"
+                style="display: none"
+                onchange="importJSON(event)"
+              />
+            </a>
+            <a onclick="exportJSON()" class="dropdown-item">
+              <div class="load">
+                <i class="fa-solid fa-download"></i>
+                <span style="font-size: var(--small);">Export Games</span>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div id="gamesList"></div>
     </div>
-    <a href="./custom" class="redirect tooltip">
-      <i class="fa-solid fa-rocket"></i>
-      <span class="tooltiptext">Use Player Names For Input</span>
-    </a>
+    <div class="meta-bar">
+      <div id="game-count">
+      </div>
+      <div id="tournament-count">
+      </div>
+    </div>
     <script src="Scripts/js/functions.js"></script>
-    <script src="Scripts/js/script.js"></script>
+    <script src="Scripts/js/games.js"></script>
     <script src="Scripts/js/customSelect.js"></script>
     <script src="Scripts/js/darkTheme.js"></script>
     <script src="Scripts/js/dropdown.js"></script>
