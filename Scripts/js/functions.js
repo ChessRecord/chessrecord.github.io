@@ -541,7 +541,7 @@ function displayGames(searchTerm = "") {
                             const category = getTimeControlCategory(game.time);
                             if (category === "Blitz") return '<i class="fa-solid fa-bolt-lightning"></i><span style="display: inline-block;width: 0.5rem;"></span>';
                             if (category === "Rapid") return '<i class="fa-solid fa-clock"></i><span style="display: inline-block;width: 0.5rem;"></span>';
-                            if (category === "Classical") return '<i class="fa-solid fa-chess-board"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                            if (category === "Classical") return '<i class="fa-solid fa-hourglass-half"></i><span style="display: inline-block;width: 0.5rem;"></span>';
                             return "";
                           })()}${game.time} • ${getTimeControlCategory(game.time)}
                           </span>
