@@ -506,16 +506,59 @@ function importJSON(event) {
         alert("No games were found in this database");
         return;
       }
-      // Generate new IDs for each imported game
-      importedData.forEach(game => {
-        game.id = generateUniqueID();
-      });
-      
-      // Update the games variable
-      window.games = importedData;
-      localStorage.setItem("chessGames", JSON.stringify(window.games));
-      displayGames(); // Refresh the displayed games
-      alert("Games imported successfully!");
+      // Show confirmation modal
+      const blur = document.getElementById('blur');
+      if (blur) {
+        // Only update classes if needed
+        if (!blur.classList.contains('visible')) {
+          blur.classList.remove('hidden');
+          blur.classList.add('visible');
+        }
+        blur.innerHTML = `
+          <div class="confirmation">
+            <div class="cancel" id="cancelBtn" title="Cancel">&times;</div>
+            <i class="fa-solid fa-triangle-exclamation warning-big"></i>
+            <h3>Do you want to replace or append your games?</h3>
+            <div class="options">
+              <button class="btn outline" id="replaceBtn">Replace</button>
+              <button class="btn" id="appendBtn">Append</button>
+            </div>
+          </div>
+        `;
+        // Use event delegation for better performance and to avoid duplicate listeners
+        const handler = function(e) {
+          if (e.target && e.target.id === 'replaceBtn') {
+            blur.classList.remove('visible');
+            blur.classList.add('hidden');
+            blur.innerHTML = '';
+            window.games = importedData;
+            localStorage.setItem("chessGames", JSON.stringify(window.games));
+            displayGames();
+            alert("Games imported successfully!");
+            blur.removeEventListener('click', handler);
+          } else if (e.target && e.target.id === 'appendBtn') {
+            blur.classList.remove('visible');
+            blur.classList.add('hidden');
+            blur.innerHTML = '';
+            // Assign new IDs only to imported games
+            importedData.forEach(game => { game.id = generateUniqueID(); });
+            // Append directly to window.games and update localStorage incrementally
+            if (!Array.isArray(window.games)) window.games = [];
+            Array.prototype.push.apply(window.games, importedData);
+            localStorage.setItem("chessGames", JSON.stringify(window.games));
+            displayGames();
+            alert("Games appended successfully!");
+            blur.removeEventListener('click', handler);
+          } else if (e.target && e.target.id === ('cancelBtn')) {
+            blur.classList.remove('visible');
+            blur.classList.add('hidden');
+            blur.innerHTML = '';
+            blur.removeEventListener('click', handler);
+            return;
+          }
+        };
+        blur.addEventListener('click', handler);
+      }
     } catch (error) {
       alert("Error parsing JSON or PGN file!");
       console.error(error);
