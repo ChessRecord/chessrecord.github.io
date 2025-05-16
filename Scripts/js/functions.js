@@ -509,11 +509,9 @@ function importJSON(event) {
       // Show confirmation modal
       const blur = document.getElementById('blur');
       if (blur) {
-        // Only update classes if needed
-        if (!blur.classList.contains('visible')) {
-          blur.classList.remove('hidden');
-          blur.classList.add('visible');
-        }
+        // Always set modal to visible and remove hidden for reliability
+        blur.classList.remove('hidden');
+        blur.classList.add('visible');
         blur.innerHTML = `
           <div class="confirmation">
             <div class="cancel" id="cancelBtn" title="Cancel">&times;</div>
@@ -528,6 +526,15 @@ function importJSON(event) {
         // Use event delegation for better performance and to avoid duplicate listeners
         const handler = function(e) {
           if (e.target && e.target.id === 'replaceBtn') {
+            // Remove duplicates within importedData itself using the provided logic
+            importedData = importedData.filter((game, idx, arr) => {
+              return !arr.some((g, i) => i !== idx &&
+                (g.white === game.white || g.black === game.black) &&
+                g.date === game.date &&
+                g.tournament === game.tournament &&
+                g.round === game.round
+              );
+            });
             blur.classList.remove('visible');
             blur.classList.add('hidden');
             blur.innerHTML = '';
@@ -542,8 +549,16 @@ function importJSON(event) {
             blur.innerHTML = '';
             // Assign new IDs only to imported games
             importedData.forEach(game => { game.id = generateUniqueID(); });
-            // Append directly to window.games and update localStorage incrementally
+            // Remove from importedData any game that already exists in window.games using the provided logic
             if (!Array.isArray(window.games)) window.games = [];
+            importedData = importedData.filter(game => {
+              return !window.games.some(g =>
+                (g.white === game.white || g.black === game.black) &&
+                g.date === game.date &&
+                g.tournament === game.tournament &&
+                g.round === game.round
+              );
+            });
             Array.prototype.push.apply(window.games, importedData);
             localStorage.setItem("chessGames", JSON.stringify(window.games));
             displayGames();
