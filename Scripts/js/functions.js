@@ -432,43 +432,97 @@ function exportJSON() {
   URL.revokeObjectURL(link.href);
 }
 
+// PGN to JSON converter for your format
+function pgnToJson(pgn) {
+  const games = pgn.split(/\n\n(?=\[Event )/).filter(Boolean);
+  return games.map((game, idx) => {
+    const getTag = (tag) => {
+      const match = game.match(new RegExp(`\\[${tag} "([^"]*)"\\]`));
+      return match ? match[1] : "";
+    };
+    let resultStr = getTag("Result").trim();
+    if (resultStr === "1/2-1/2") resultStr = "½-½";
+    return {
+      white: (getTag("White") || "").trim(),
+      whiteRating: Number(getTag("WhiteElo")) || 0,
+      whiteTitle: getTag("WhiteTitle").trim() || "",
+      black: (getTag("Black") || "").trim(),
+      blackRating: Number(getTag("BlackElo")) || 0,
+      blackTitle: getTag("BlackTitle").trim() || "",
+      result: resultStr,
+      tournament: getTag("StudyName").trim() || getTag("Event").trim().split(":").slice(-1)[0],
+      round: Number(getTag("Round").trim()) || idx + 1,
+      time: getTag("TimeControl").trim(),
+      date: getTag("Date") ? getTag("Date").replace(/\./g, "-") : "",
+      gameLink: getTag("ChapterURL")
+    };
+  });
+}
+
 function importJSON(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  // Normalization function to ensure structure and types match PGN import
+  function normalizeGame(game, idx = 0) {
+    return {
+      white: (game.white || "").trim(),
+      whiteRating: Number(game.whiteRating) || 0,
+      whiteTitle: (game.whiteTitle || "").trim(),
+      black: (game.black || "").trim(),
+      blackRating: Number(game.blackRating) || 0,
+      blackTitle: (game.blackTitle || "").trim(),
+      result: (game.result || "*").trim(),
+      tournament: (game.tournament || "").trim(),
+      round: Number(game.round) || idx + 1,
+      time: (game.time || "").trim(),
+      date: (game.date || "").replace(/\./g, "-"),
+      gameLink: (game.gameLink || "").trim()
+    };
+  }
+
   const reader = new FileReader();
   reader.onload = function (e) {
-      try {
-          const importedData = JSON.parse(e.target.result);
-          
-          // Generate new IDs for each imported game
-          importedData.forEach(game => {
-            game.id = generateUniqueID();
-          });
-          
-          if (!Array.isArray(importedData)) {
-              alert("Invalid file format! Make sure you're uploading a valid JSON backup.");
-              return;
-          } else if (isEmpty(importedData)) {
-            alert("No games were found in this database");
-            return;
-          }
-
-          // Update the games variable
-          window.games = importedData;
-          localStorage.setItem("chessGames", JSON.stringify(window.games));
-          displayGames(); // Refresh the displayed games
-
-          alert("Games imported successfully!");
-      } catch (error) {
-          alert("Error parsing JSON file!");
-          console.error(error);
+    try {
+      let importedData;
+      if (file.name.toLowerCase().endsWith('.pgn')) {
+        const pgn = e.target.result;
+        importedData = pgnToJson(pgn);
+      } else if (file.name.toLowerCase().endsWith('.json')) {
+        const rawData = JSON.parse(e.target.result);
+        if (!Array.isArray(rawData)) {
+          alert("Invalid file format! Make sure you're uploading a valid JSON or PGN file.");
+          return;
+        }
+        importedData = rawData.map((game, idx) => normalizeGame(game, idx));
+      } else {
+        alert("Invalid file format! Please upload a valid JSON or PGN file.");
+        return;
       }
+      if (!Array.isArray(importedData)) {
+        alert("Invalid file format! Make sure you're uploading a valid JSON or PGN file.");
+        return;
+      } else if (isEmpty(importedData)) {
+        alert("No games were found in this database");
+        return;
+      }
+      // Generate new IDs for each imported game
+      importedData.forEach(game => {
+        game.id = generateUniqueID();
+      });
+      
+      // Update the games variable
+      window.games = importedData;
+      localStorage.setItem("chessGames", JSON.stringify(window.games));
+      displayGames(); // Refresh the displayed games
+      alert("Games imported successfully!");
+    } catch (error) {
+      alert("Error parsing JSON or PGN file!");
+      console.error(error);
+    }
   };
-
   reader.readAsText(file);
 }
-
 
 function deleteGame(id) {
   let gameToDelete = window.games.find((game) => game.id === id);
@@ -522,6 +576,11 @@ function displayGames(searchTerm = "") {
     return acc;
   }, {});
 
+  // Sort each tournament's games by round number
+  Object.values(gamesByTournament).forEach(gamesArr => {
+    gamesArr.sort((a, b) => (a.round || 0) - (b.round || 0));
+  });
+
   // Generate HTML with tournament headers
   gamesList.innerHTML = Object.entries(gamesByTournament)
     .map(([tournament, tournamentGames]) => `
@@ -553,9 +612,10 @@ function displayGames(searchTerm = "") {
                             }
                           })()}
                           ${(() => {
+                            if (!game.time) return "</span>";
                             const category = getTimeControlCategory(game.time);
                             return category === "Unknown"
-                              ? '</span>'
+                              ? `${game.time} </span> | `
                               : `${game.time} • ${category}</span> | `;
                           })()}
                           ${game.date ? `<strong>${game.date}</strong>` : ""}
@@ -590,7 +650,7 @@ function displayGames(searchTerm = "") {
 }
 
 function formatResult(result) {
-  if (!result) return '*';
+  if (!result.trim()) return '*';
   // Replace with spaced versions
   let formatted = result.replace('1-0', '1 - 0').replace('0-1', '0 - 1').replace('1/2-1/2', '1/2 - 1/2');
   // Replace 1/2 with fraction ½

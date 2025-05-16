@@ -1,19 +1,14 @@
 // PGN to JSON converter for your format
 function pgnToJson(pgn) {
   const games = pgn.split(/\n\n(?=\[Event )/).filter(Boolean);
-  const result = [];
-
-  games.forEach((game, idx) => {
+  return games.map((game, idx) => {
     const getTag = (tag) => {
       const match = game.match(new RegExp(`\\[${tag} "([^"]*)"\\]`));
       return match ? match[1] : "";
     };
-
-    // Result conversion
     let resultStr = getTag("Result");
     if (resultStr === "1/2-1/2") resultStr = "½-½";
-
-    result.push({
+    return {
       white: getTag("White"),
       whiteRating: getTag("WhiteElo"),
       whiteTitle: "",
@@ -26,13 +21,10 @@ function pgnToJson(pgn) {
       time: getTag("TimeControl"),
       date: getTag("Date") ? getTag("Date").replace(/\./g, "-") : "",
       gameLink: getTag("ChapterURL")
-    });
+    };
   });
-
-  return result;
 }
 
-// Add event listener for form submission
 window.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('PGN-Form');
   const textarea = document.getElementById('PGN');
@@ -40,8 +32,8 @@ window.addEventListener('DOMContentLoaded', function() {
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
-    const pgn = textarea.value;
-    if (!pgn.trim()) {
+    const pgn = textarea.value.trim();
+    if (!pgn) {
       alert('Please enter a PGN value.');
       return;
     }
@@ -49,17 +41,13 @@ window.addEventListener('DOMContentLoaded', function() {
     const formatted = JSON.stringify(json, null, 2);
 
     // Extract event name from first game
-    const eventMatch = pgn.match(/\[Event "([^"]*)"\]/);
-    let eventName = eventMatch ? eventMatch[1] : 'chess_event';
-    // Remove everything after the last colon (and the colon itself)
+    let eventName = (pgn.match(/\[Event "([^"]*)"\]/) || [,'chess_event'])[1];
     if (eventName.includes(':')) {
       eventName = eventName.substring(0, eventName.lastIndexOf(':')).trim();
     }
-    // Sanitize filename (remove invalid characters)
     eventName = eventName.replace(/[^a-z0-9\-_ ]/gi, '_');
     const filename = eventName + '.json';
 
-    // Create blob and download
     const blob = new Blob([formatted], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
