@@ -460,10 +460,10 @@ function pgnToJson(pgn) {
 }
 
 function importJSON(event) {
+  const input = event.target;          // 📌 Capture the input element
   const file = event.target.files[0];
   if (!file) return;
 
-  // Normalization function to ensure structure and types match PGN import
   function normalizeGame(game, idx = 0) {
     return {
       white: (game.white || "").trim(),
@@ -485,10 +485,10 @@ function importJSON(event) {
   reader.onload = function (e) {
     try {
       let importedData;
-      if (file.name.toLowerCase().endsWith('.pgn')) {
+      if (file.name.toLowerCase().endsWith(".pgn")) {
         const pgn = e.target.result;
         importedData = pgnToJson(pgn);
-      } else if (file.name.toLowerCase().endsWith('.json')) {
+      } else if (file.name.toLowerCase().endsWith(".json")) {
         const rawData = JSON.parse(e.target.result);
         if (!Array.isArray(rawData)) {
           alert("Invalid file format! Make sure you're uploading a valid JSON or PGN file.");
@@ -499,19 +499,16 @@ function importJSON(event) {
         alert("Invalid file format! Please upload a valid JSON or PGN file.");
         return;
       }
-      if (!Array.isArray(importedData)) {
-        alert("Invalid file format! Make sure you're uploading a valid JSON or PGN file.");
-        return;
-      } else if (isEmpty(importedData)) {
+
+      if (!Array.isArray(importedData) || isEmpty(importedData)) {
         alert("No games were found in this database");
         return;
       }
-      // Show confirmation modal
-      const blur = document.getElementById('blur');
+
+      const blur = document.getElementById("blur");
       if (blur) {
-        // Always set modal to visible and remove hidden for reliability
-        blur.classList.remove('hidden');
-        blur.classList.add('visible');
+        blur.classList.remove("hidden");
+        blur.classList.add("visible");
         blur.innerHTML = `
           <div class="confirmation">
             <div class="cancel" id="cancelBtn" title="Cancel">&times;</div>
@@ -523,47 +520,47 @@ function importJSON(event) {
             </div>
           </div>
         `;
-        // Use event delegation for better performance and to avoid duplicate listeners
-        const handler = function(e) {
-          if (e.target && e.target.id === 'replaceBtn') {
-            blur.classList.remove('visible');
-            blur.classList.add('hidden');
-            blur.innerHTML = '';
+
+        const handler = function (e) {
+          if (e.target.id === "replaceBtn") {
+            blur.classList.remove("visible");
+            blur.classList.add("hidden");
+            blur.innerHTML = "";
+            importedData.forEach(game => { game.id = generateUniqueID(); });
             window.games = importedData;
-            localStorage.setItem("chessGames", JSON.stringify(window.games));
+            saveGames();
             displayGames();
             alert("Games imported successfully!");
-            blur.removeEventListener('click', handler);
-          } else if (e.target && e.target.id === 'appendBtn') {
-            blur.classList.remove('visible');
-            blur.classList.add('hidden');
-            blur.innerHTML = '';
-            // Assign new IDs only to imported games
+          } else if (e.target.id === "appendBtn") {
+            blur.classList.remove("visible");
+            blur.classList.add("hidden");
+            blur.innerHTML = "";
             importedData.forEach(game => { game.id = generateUniqueID(); });
-            // Append directly to window.games and update localStorage incrementally
-            if (!Array.isArray(window.games)) window.games = [];
-            Array.prototype.push.apply(window.games, importedData);
-            localStorage.setItem("chessGames", JSON.stringify(window.games));
+            window.games.push(...importedData);
+            saveGames();
             displayGames();
             alert("Games appended successfully!");
-            blur.removeEventListener('click', handler);
-          } else if (e.target && e.target.id === ('cancelBtn')) {
-            blur.classList.remove('visible');
-            blur.classList.add('hidden');
-            blur.innerHTML = '';
-            blur.removeEventListener('click', handler);
-            return;
+          } else if (e.target.id === "cancelBtn") {
+            blur.classList.remove("visible");
+            blur.classList.add("hidden");
+            blur.innerHTML = "";
           }
+          input.value = "";
         };
-        blur.addEventListener('click', handler);
+
+        // One-time event listener; no need to store it
+        blur.addEventListener("click", handler, { once: true });
       }
     } catch (error) {
       alert("Error parsing JSON or PGN file!");
       console.error(error);
+      input.value = "";
     }
   };
+
   reader.readAsText(file);
 }
+
 
 function deleteGame(id) {
   let gameToDelete = window.games.find((game) => game.id === id);
@@ -677,7 +674,10 @@ function displayGames(searchTerm = "") {
                         </span>
                       </div>
                     </div>
-                    <button class="delete-game-btn" onclick="deleteGame('${game.id}'); event.preventDefault()"><i class="fa-solid fa-delete-left"></i></button>
+                    <button class="delete-game-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteGame('${game.id}')">
+                      <i class="fa-solid fa-delete-left"></i>
+                    </button>
+
                 </div>
               </a>
             `
