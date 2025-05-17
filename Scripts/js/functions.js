@@ -526,15 +526,6 @@ function importJSON(event) {
         // Use event delegation for better performance and to avoid duplicate listeners
         const handler = function(e) {
           if (e.target && e.target.id === 'replaceBtn') {
-            // Remove duplicates within importedData itself using the provided logic
-            importedData = importedData.filter((game, idx, arr) => {
-              return !arr.some((g, i) => i !== idx &&
-                (g.white === game.white || g.black === game.black) &&
-                g.date === game.date &&
-                g.tournament === game.tournament &&
-                g.round === game.round
-              );
-            });
             blur.classList.remove('visible');
             blur.classList.add('hidden');
             blur.innerHTML = '';
@@ -549,16 +540,8 @@ function importJSON(event) {
             blur.innerHTML = '';
             // Assign new IDs only to imported games
             importedData.forEach(game => { game.id = generateUniqueID(); });
-            // Remove from importedData any game that already exists in window.games using the provided logic
+            // Append directly to window.games and update localStorage incrementally
             if (!Array.isArray(window.games)) window.games = [];
-            importedData = importedData.filter(game => {
-              return !window.games.some(g =>
-                (g.white === game.white || g.black === game.black) &&
-                g.date === game.date &&
-                g.tournament === game.tournament &&
-                g.round === game.round
-              );
-            });
             Array.prototype.push.apply(window.games, importedData);
             localStorage.setItem("chessGames", JSON.stringify(window.games));
             displayGames();
