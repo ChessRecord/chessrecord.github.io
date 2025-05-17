@@ -100,7 +100,6 @@ button.outline {
   border: 2px solid var(--white-d);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Container Styles */
@@ -165,7 +164,6 @@ button {
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
 button[type="submit"] {

@@ -166,3 +166,15 @@ body.dark-theme {
   background-size: contain;
   cursor: pointer;
 }
+
+.dark-theme .confirmation {
+  background-color: var(--black-2c);
+  color: var(--white-e0);
+  border: 2px solid var(--grey-333);
+}
+
+.dark-theme button.outline {
+  background-color: var(--black-2a);
+  color: var(--white-e0);
+  border: 2px solid var(--grey-555);
+}

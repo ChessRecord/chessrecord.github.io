@@ -34,6 +34,9 @@
   --medium: 20px;
   --normal: 25px;
   --large: 30px;
+
+  --good: #4caf50;
+  --bad: #f44336;
 }
 
 .custom-select {
