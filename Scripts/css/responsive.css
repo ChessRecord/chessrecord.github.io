@@ -52,6 +52,18 @@
   button {
     width: 100%; /* Full width inputs */
   }
+
+  .confirmation {
+    width: 90vw; /* Adjust confirmation box width */
+  }
+
+  .confirmation i.warning-big {
+    font-size: 4rem; /* Adjust icon size */
+  }
+  .confirmation .options {
+    flex-direction: column; /* Stack options vertically */
+    gap: var(--small);
+  }
 }
 
 @media screen and (max-width: 515px) {
