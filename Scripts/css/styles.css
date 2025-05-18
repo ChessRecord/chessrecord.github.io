@@ -80,9 +80,14 @@ body {
 }
 
 .confirmation .options {
-  display: flex;
-  justify-content: space-between;
   width: 100%;
+  display: flex;
+  gap: var(--small);
+}
+
+.confirmation .options button {
+  width: 100%;
+  flex-grow: 1;
 }
 
 .confirmation .cancel {
@@ -258,6 +263,15 @@ button[type="submit"] {
   }
 }
 
+@keyframes slideOutSmallAbsolute {
+  from {
+    transform: translate(-50%, calc(-50% - 40px));
+  }
+  to {
+    transform: translate(-50%, calc(-50% + 20px));
+  }
+}
+
 .loader {
   width: var(--normal);
   aspect-ratio: 1;
@@ -302,4 +316,26 @@ a.redirect {
   gap: var(--small);
   font-size: var(--medium);
   cursor: pointer;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: calc(var(--small)/2) var(--small);
+  border-radius: calc(var(--border-radius)/1.5);
+  font-size: var(--small);
+  /*animation: slideOutSmallAbsolute 0.3s ease-out;*/
+}
+
+.notification.good {
+  background-color: var(--good);
+  color: var(--white-container);
+}
+
+.notification.bad {
+  background-color: var(--bad);
+  color: var(--white-container);
 }

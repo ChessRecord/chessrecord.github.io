@@ -22,18 +22,22 @@
     right: 0 !important;
   }
 
-  .game-tournament {
-    display: none;
-  }
   .game-details {
     display: flex;
     justify-content: center !important;
     align-items: center !important;
+    gap: var(--small);
     margin-bottom: 5px !important;
   }
 
   .entry-meta {
     justify-content: center;
+  }
+}
+
+@media screen and (max-width: 1150px) {
+  .confirmation {
+    width: 60vw; /* Adjust confirmation box width */
   }
 }
 
@@ -53,16 +57,11 @@
     width: 100%; /* Full width inputs */
   }
 
-  .confirmation {
-    width: 90vw; /* Adjust confirmation box width */
-  }
-
   .confirmation i.warning-big {
     font-size: 4rem; /* Adjust icon size */
   }
   .confirmation .options {
     flex-direction: column; /* Stack options vertically */
-    gap: var(--small);
   }
 }
 
@@ -80,5 +79,19 @@
   .player-right {
     width: 100%;
     text-align: left !important;
+  }
+
+  .game-details {
+    gap: 0;
+  }
+
+  .game-tournament strong {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 950px) {
+  .confirmation {
+    width: 90vw; /* Adjust confirmation box width */
   }
 }
