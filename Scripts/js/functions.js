@@ -450,7 +450,7 @@ function pgnToJson(pgn) {
       blackRating: Number(getTag("BlackElo")) || 0,
       blackTitle: getTag("BlackTitle").trim() || "",
       result: resultStr,
-      tournament: getTag("Event").trim() || getTag("StudyName").trim(),
+      tournament: getTag("StudyName").trim() || getTag("Event").trim().split(":").slice(-1)[0],
       round: Number(getTag("Round").trim()) || idx + 1,
       time: getTag("TimeControl").trim(),
       date: getTag("Date") ? getTag("Date").replace(/\./g, "-") : "",
