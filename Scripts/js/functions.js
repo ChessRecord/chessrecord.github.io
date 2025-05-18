@@ -693,8 +693,6 @@ function displayGames(searchTerm = "") {
 function formatResult(result) {
   if (!result.trim()) return '*';
   // Replace with spaced versions
-  let formatted = result.replace('1-0', '1 - 0').replace('0-1', '0 - 1').replace('1/2-1/2', '1/2 - 1/2');
-  // Replace 1/2 with fraction ½
-  formatted = formatted.replace(/1\/2/g, '½');
+  let formatted = result.replace('1-0', '1 - 0').replace('0-1', '0 - 1').replace('1/2-1/2', '½ - ½');
   return formatted;
 }
