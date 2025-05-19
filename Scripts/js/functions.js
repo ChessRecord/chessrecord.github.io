@@ -692,7 +692,10 @@ function displayGames(searchTerm = "") {
 
 function formatResult(result) {
   if (!result.trim()) return '*';
-  // Replace with spaced versions
-  let formatted = result.replace('1-0', '1 - 0').replace('0-1', '0 - 1').replace('1/2-1/2', '½ - ½');
-  return formatted;
+
+  return result
+    .replace(/1\s*-\s*0/g, '1 - 0')
+    .replace(/0\s*-\s*1/g, '0 - 1')
+    .replace(/1\/2\s*-\s*1\/2/g, '½ - ½')
+    .replace(/1\/2/g, '½');  // fallback, just in case
 }
