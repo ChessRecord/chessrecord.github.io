@@ -691,11 +691,12 @@ function displayGames(searchTerm = "") {
 }
 
 function formatResult(result) {
-  if (!result.trim()) return '*';
+  if (!result || typeof result !== "string") return "*";
 
   return result
-    .replace(/1\s*-\s*0/g, '1 - 0')
-    .replace(/0\s*-\s*1/g, '0 - 1')
-    .replace(/1\/2\s*-\s*1\/2/g, '½ - ½')
-    .replace(/1\/2/g, '½');  // fallback, just in case
+    .replace(/1\/2\s*-\s*1\/2/g, "½ - ½")   // replace 1/2-1/2 first
+    .replace(/½\s*-\s*½/g, "½ - ½")         // fix badly spaced ½s
+    .replace(/1\s*-\s*0/g, "1 - 0")         // standard win
+    .replace(/0\s*-\s*1/g, "0 - 1")         // standard loss
+    .replace(/1\/2/g, "½");                // lone 1/2s
 }
