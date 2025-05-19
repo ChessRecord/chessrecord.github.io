@@ -412,6 +412,7 @@ function exportJSON() {
   // Remove the "id" key from each game object
   dataInitial.forEach(game => {
     delete game.id;
+    game.result = normalizeResult(game.result);
   });
 
   // Convert the modified array to a JSON string
@@ -460,53 +461,57 @@ function pgnToJson(pgn) {
 }
 
 function importJSON(event) {
-  const input = event.target;          // 📌 Capture the input element
-  const file = event.target.files[0];
+  const input = event.target;
+  const file = input.files[0];
   if (!file) return;
 
-  function normalizeGame(game, idx = 0) {
-    return {
-      white: (game.white || "").trim(),
-      whiteRating: Number(game.whiteRating) || 0,
-      whiteTitle: (game.whiteTitle || "").trim(),
-      black: (game.black || "").trim(),
-      blackRating: Number(game.blackRating) || 0,
-      blackTitle: (game.blackTitle || "").trim(),
-      result: (game.result || "*").trim(),
-      tournament: (game.tournament || "").trim(),
-      round: Number(game.round) || idx + 1,
-      time: (game.time || "").trim(),
-      date: (game.date || "").replace(/\./g, "-"),
-      gameLink: (game.gameLink || "").trim()
-    };
-  }
+  const normalizeGame = (game, idx = 0) => ({
+    white: (game.white || "").trim(),
+    whiteRating: Number(game.whiteRating) || 0,
+    whiteTitle: (game.whiteTitle || "").trim(),
+    black: (game.black || "").trim(),
+    blackRating: Number(game.blackRating) || 0,
+    blackTitle: (game.blackTitle || "").trim(),
+    result: (game.result || "*").trim(),
+    tournament: (game.tournament || "").trim(),
+    round: Number(game.round) || idx + 1,
+    time: (game.time || "").trim(),
+    date: (game.date || "").replace(/\./g, "-"),
+    gameLink: (game.gameLink || "").trim()
+  });
 
   const reader = new FileReader();
   reader.onload = function (e) {
     try {
       let importedData;
+
       if (file.name.toLowerCase().endsWith(".pgn")) {
-        const pgn = e.target.result;
-        importedData = pgnToJson(pgn);
+        importedData = pgnToJson(e.target.result);
       } else if (file.name.toLowerCase().endsWith(".json")) {
         const rawData = JSON.parse(e.target.result);
         if (!Array.isArray(rawData)) {
           alert("Invalid file format! Make sure you're uploading a valid JSON or PGN file.");
           return;
         }
-        importedData = rawData.map((game, idx) => normalizeGame(game, idx));
+        importedData = rawData.map(normalizeGame);
       } else {
         alert("Invalid file format! Please upload a valid JSON or PGN file.");
         return;
       }
 
-      if (!Array.isArray(importedData) || isEmpty(importedData)) {
+      if (isEmpty(importedData)) {
         alert("No games were found in this database");
         return;
       }
 
       const blur = document.getElementById("blur");
       if (blur) {
+        const hideModal = () => {
+          blur.classList.remove("visible");
+          blur.classList.add("hidden");
+          blur.innerHTML = "";
+        };
+
         blur.classList.remove("hidden");
         blur.classList.add("visible");
         blur.innerHTML = `
@@ -523,43 +528,38 @@ function importJSON(event) {
 
         const handler = function (e) {
           if (e.target.id === "replaceBtn") {
-            blur.classList.remove("visible");
-            blur.classList.add("hidden");
-            blur.innerHTML = "";
-            importedData.forEach(game => { game.id = generateUniqueID(); });
+            importedData.forEach(game => game.id = generateUniqueID());
             window.games = importedData;
             saveGames();
             displayGames();
             alert("Games imported successfully!");
           } else if (e.target.id === "appendBtn") {
-            blur.classList.remove("visible");
-            blur.classList.add("hidden");
-            blur.innerHTML = "";
-            importedData.forEach(game => { game.id = generateUniqueID(); });
+            importedData.forEach(game => game.id = generateUniqueID());
             window.games.push(...importedData);
             saveGames();
             displayGames();
             alert("Games appended successfully!");
-          } else if (e.target.id === "cancelBtn") {
-            blur.classList.remove("visible");
-            blur.classList.add("hidden");
-            blur.innerHTML = "";
           }
+
+          hideModal();
           input.value = "";
         };
 
-        // One-time event listener; no need to store it
         blur.addEventListener("click", handler, { once: true });
       }
+
     } catch (error) {
       alert("Error parsing JSON or PGN file!");
       console.error(error);
-      input.value = "";
     }
+
+    // ✅ Always clear input no matter what
+    input.value = "";
   };
 
   reader.readAsText(file);
 }
+
 
 
 function deleteGame(id) {
@@ -693,10 +693,35 @@ function displayGames(searchTerm = "") {
 function formatResult(result) {
   if (!result || typeof result !== "string") return "*";
 
-  return result
-    .replace(/1\/2\s*-\s*1\/2/g, "½ - ½")   // replace 1/2-1/2 first
-    .replace(/½\s*-\s*½/g, "½ - ½")         // fix badly spaced ½s
-    .replace(/1\s*-\s*0/g, "1 - 0")         // standard win
-    .replace(/0\s*-\s*1/g, "0 - 1")         // standard loss
-    .replace(/1\/2/g, "½");                // lone 1/2s
+  const cleaned = result.trim()
+    .replace(/½/g, "1/2")
+    .replace(/\s+/g, "");
+
+  switch (cleaned) {
+    case "1-0":
+      return "1 - 0";
+    case "0-1":
+      return "0 - 1";
+    case "1/2-1/2":
+      return "½ - ½";
+    default:
+      return result.trim(); // fallback to original (trimmed)
+  }
+}
+
+function normalizeResult(result) {
+  if (!result || typeof result !== "string") return "*";
+
+  const cleaned = result.trim()
+    .replace(/½/g, "1/2")        // Convert fancy fractions to plain
+    .replace(/\s+/g, "")         // Remove all whitespace
+
+  switch (cleaned) {
+    case "1-0":
+    case "0-1":
+    case "1/2-1/2":
+      return cleaned;
+    default:
+      return "*";
+  }
 }
