@@ -504,6 +504,18 @@ function importJSON(event) {
         return;
       }
 
+      // ✅ If games list is empty, just replace directly
+      if (isEmpty(window.games)) {
+        importedData.forEach(game => game.id = generateUniqueID());
+        window.games = importedData;
+        saveGames();
+        displayGames();
+        alert("Games imported successfully!");
+        input.value = "";
+        return;
+      }
+
+      // 🔄 Show confirmation modal if there are already games
       const blur = document.getElementById("blur");
       if (blur) {
         const hideModal = () => {
