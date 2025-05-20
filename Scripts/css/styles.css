@@ -318,6 +318,10 @@ a.redirect {
   cursor: pointer;
 }
 
+.load i {
+  color: var(--deep-blue);
+}
+
 .notification {
   position: fixed;
   top: 20px;
