@@ -560,8 +560,6 @@ function importJSON(event) {
   reader.readAsText(file);
 }
 
-
-
 function deleteGame(id) {
   let gameToDelete = window.games.find((game) => game.id === id);
   let delete_confirmation = `Are you sure you want to delete:\n ${toUnicodeVariant(
