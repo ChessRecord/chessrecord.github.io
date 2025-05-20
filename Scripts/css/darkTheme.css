@@ -110,6 +110,10 @@ body.dark-theme {
   border: 2px solid var(--grey-333);
 }
 
+.dark-theme .load i {
+  color: var(--white-e0);
+}
+
 /* ========================= */
 /* Delete Button Styles      */
 /* ========================= */
