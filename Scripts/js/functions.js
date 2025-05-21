@@ -685,7 +685,7 @@ function displayGames(searchTerm = "") {
                       </div>
                     </div>
                     <button class="delete-game-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteGame('${game.id}')">
-                      <i class="fa-solid fa-delete-left"></i>
+                      <span class="fontawesome"></span>
                     </button>
 
                 </div>
