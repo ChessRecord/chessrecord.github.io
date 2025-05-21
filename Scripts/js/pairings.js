@@ -61,6 +61,9 @@ async function scrapeChessResults(url) {
           rowObj[key] = cells[idx];
         });
 
+        const nameCell = $(row).find("td").eq(headerKeys.indexOf("Name"));
+        const nameLink = nameCell.find("a").attr("href");
+
         // Compose pairing object using mapped keys
         const pairing = {
           round: rowObj["Rd."],
@@ -79,6 +82,7 @@ async function scrapeChessResults(url) {
               : $(row).find("td:eq(" + (headerKeys.indexOf("Res.")) + ") div.FarbewT").length > 0
               ? "White"
               : "",
+          opponentProfileUrl: nameLink ? "https://chess-results.com/" + nameLink : null
         };
 
         pairings.push(pairing);
@@ -149,6 +153,7 @@ async function getChessResults(url) {
       opponentPoints: pairing.opponentPoints.replace(",5", "&#189;"),
       result: pairing.result,
       playerColor: pairing.playerColor,
+      opponentProfileUrl: pairing.opponentProfileUrl,
       win:
         calcChange(rating, oppRating, 1) === ""
           ? ""
@@ -220,7 +225,14 @@ function renderPairingsTable(rounds) {
         <td>${round.round}</td>
         <td>${round.boardNo}</td>
         <td>${round.playerStartNo}</td>
-        <td><span class="title">${round.opponentTitle}</span> ${round.opponentName}</td>
+        <td>
+          <span class="title">${round.opponentTitle}</span>
+          ${
+            round.opponentProfileUrl
+              ? `<a href="${round.opponentProfileUrl}" target="_blank">${round.opponentName}</a>`
+              : round.opponentName
+          }
+        </td>
         <td>
         ${
           round.opponentRating !== 0
