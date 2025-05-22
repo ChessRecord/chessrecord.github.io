@@ -98,6 +98,11 @@ tr:nth-child(even) {
     display: flex;
     justify-content: space-around;
 }
+
+.result-cell:only-child, .result-cell:has(:only-child) {
+    justify-content: center;
+}
+
 .note {
     font-size: 0.95em;
     color: #444;

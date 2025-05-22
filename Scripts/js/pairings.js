@@ -252,7 +252,7 @@ function renderPairingsTable(rounds, playerName) {
         ${hasFederation ? `<td>${round.opponentFederation || ""}</td>` : ""}
         <td>${round.opponentClub}</td>
         <td>${round.opponentPoints}</td>
-        <td class="result-cell">${colorSpan}${resultDisplay}</td>
+        <td class="result-cell">${colorSpan}${resultDisplay ? `<span>${resultDisplay}</span>` : ''}</td>
       </tr>
     `;
   });
