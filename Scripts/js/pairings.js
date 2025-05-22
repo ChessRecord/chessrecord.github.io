@@ -150,7 +150,7 @@ async function getChessResults(url) {
       opponentRating: oppRating,
       opponentFederation: pairing.opponentFederation,
       opponentClub: pairing.opponentClub,
-      opponentPoints: pairing.opponentPoints.replace(",5", "&#189;"),
+      opponentPoints: pairing.opponentPoints.replace(/,5/g, "&#189;").replace(/0&#189;/g, "&#189;"),
       result: pairing.result,
       playerColor: pairing.playerColor,
       opponentProfileUrl: pairing.opponentProfileUrl,
@@ -223,9 +223,6 @@ function renderPairingsTable(rounds, playerName) {
     }
 
     let resultDisplay = round.result;
-    if (resultDisplay === "0.5" || resultDisplay === "½") {
-      resultDisplay = "&#189;";
-    }
 
     tableHtml += `
       <tr>
