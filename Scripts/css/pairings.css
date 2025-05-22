@@ -1,9 +1,22 @@
+#chess-resultsForm {
+    margin-bottom: var(--small);
+}
+
+#player-name {
+    margin-bottom: var(--small);
+    margin-left: var(--small);
+    color: var(--deep-blue);
+}
+
+.dark-theme #player-name {
+    color: var(--white-e0);
+}
+
 div.table {
     display: block;
     overflow-x: auto;
 }
 table {
-    margin-top: var(--normal);
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
@@ -90,6 +103,12 @@ tr:nth-child(even) {
     color: #444;
     margin-top: 12px;
     text-align: center;
+}
+
+@media screen and (max-width: 600px) {
+    .note {
+        display: none;
+    }
 }
 
 .dark-theme .note {

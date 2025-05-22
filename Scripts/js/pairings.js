@@ -183,7 +183,14 @@ async function getChessResults(url) {
 }
 
 // Render rounds data into #pairings-table in the required format
-function renderPairingsTable(rounds) {
+function renderPairingsTable(rounds, playerName) {
+  // Show player name above the table
+  if (playerName) {
+    if ($('#player-name').length === 0) {
+      $('#pairings-table').before('<div id="player-name"></div>');
+    }
+    $('#player-name').html('<strong>' + playerName.replace(",", "") + '</strong>');
+  }
   const $table = $("#pairings-table");
   // Check if any round has a federation value
   const hasFederation = rounds.some(r => r.opponentFederation && r.opponentFederation.trim() !== "");
@@ -282,7 +289,10 @@ async function showPairingsTableFromInput() {
   showLoader("#searchURL span");
   try {
     const data = await getChessResults(url);
-    renderPairingsTable(data.rounds);
+    renderPairingsTable(data.rounds, data.playerInfo && data.playerInfo["Name"]);
+    // Cache rounds data in localStorage (also cache player name)
+    window.localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
+    window.localStorage.setItem("pairingsPlayerName", data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "");
     hideLoader("#searchURL span");
   } catch (err) {
     hideLoader("#searchURL span");
@@ -297,6 +307,20 @@ $(function () {
   const storedUrl = window.localStorage.getItem("chessResultsUrl");
   if (storedUrl) {
     $("#url-input").val(storedUrl);
+  }
+
+  // On page load, restore pairings table if cached
+  const cachedRounds = window.localStorage.getItem("pairingsRounds");
+  const cachedPlayerName = window.localStorage.getItem("pairingsPlayerName");
+  if (cachedRounds) {
+    try {
+      const rounds = JSON.parse(cachedRounds);
+      renderPairingsTable(rounds, cachedPlayerName);
+    } catch (e) {
+      // If parsing fails, clear the cache
+      window.localStorage.removeItem("pairingsRounds");
+      window.localStorage.removeItem("pairingsPlayerName");
+    }
   }
 
   $("#chess-resultsForm").on("submit", function (e) {
