@@ -133,7 +133,7 @@ async function getChessResults(url) {
   const { playerInfo, pairings } = await scrapeChessResults(url);
 
   const rating = parseInt(playerInfo["Rating"]);
-  const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(",", "."));
+  const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(/,/g, "."));
   if (isNaN(rating)) {
     throw new Error("Could not detect your rating from the page.");
   }
