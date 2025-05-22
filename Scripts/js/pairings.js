@@ -146,7 +146,7 @@ async function getChessResults(url) {
       boardNo: pairing.boardNo,
       playerStartNo: pairing.playerStartNo,
       opponentTitle: pairing.opponentTitle,
-      opponentName: pairing.opponentName,
+      opponentName: pairing.opponentName.replace(/,/g, ""),
       opponentRating: oppRating,
       opponentFederation: pairing.opponentFederation,
       opponentClub: pairing.opponentClub,
@@ -189,7 +189,7 @@ function renderPairingsTable(rounds, playerName) {
     if ($('#player-name').length === 0) {
       $('#pairings-table').before('<div id="player-name"></div>');
     }
-    $('#player-name').html('<strong>' + playerName.replace(",", "") + '</strong>');
+    $('#player-name').html('<strong>' + playerName.replace(/,/g, "") + '</strong>');
   }
   const $table = $("#pairings-table");
   // Check if any round has a federation value
