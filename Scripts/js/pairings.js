@@ -183,13 +183,17 @@ async function getChessResults(url) {
 }
 
 // Render rounds data into #pairings-table in the required format
-function renderPairingsTable(rounds, playerName) {
-  // Show player name above the table
+function renderPairingsTable(rounds, playerName, playerRating) {
+  // Show player name and rating above the table
   if (playerName) {
     if ($('#player-name').length === 0) {
       $('#pairings-table').before('<div id="player-name"></div>');
     }
-    $('#player-name').html('<strong>' + playerName.replace(/,/g, "") + '</strong>');
+    let displayHtml = '<strong>' + playerName.replace(/,/g, "") + '</strong>';
+    if (playerRating) {
+      displayHtml += ' <span class="player-rating">' + playerRating + '</span>';
+    }
+    $('#player-name').html(displayHtml);
   }
   const $table = $("#pairings-table");
   // Check if any round has a federation value
@@ -286,10 +290,12 @@ async function showPairingsTableFromInput() {
   showLoader("#searchURL span");
   try {
     const data = await getChessResults(url);
-    renderPairingsTable(data.rounds, data.playerInfo && data.playerInfo["Name"]);
-    // Cache rounds data in localStorage (also cache player name)
+    const playerRating = data.playerInfo && data.playerInfo["Rating international"] ? data.playerInfo["Rating international"] : null;
+    renderPairingsTable(data.rounds, data.playerInfo && data.playerInfo["Name"], playerRating);
+    // Cache rounds data in localStorage (also cache player name and rating)
     window.localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
     window.localStorage.setItem("pairingsPlayerName", data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "");
+    window.localStorage.setItem("pairingsPlayerRating", playerRating ? playerRating : "");
     hideLoader("#searchURL span");
   } catch (err) {
     hideLoader("#searchURL span");
@@ -309,14 +315,16 @@ $(function () {
   // On page load, restore pairings table if cached
   const cachedRounds = window.localStorage.getItem("pairingsRounds");
   const cachedPlayerName = window.localStorage.getItem("pairingsPlayerName");
+  const cachedPlayerRating = window.localStorage.getItem("pairingsPlayerRating");
   if (cachedRounds) {
     try {
       const rounds = JSON.parse(cachedRounds);
-      renderPairingsTable(rounds, cachedPlayerName);
+      renderPairingsTable(rounds, cachedPlayerName, cachedPlayerRating);
     } catch (e) {
       // If parsing fails, clear the cache
       window.localStorage.removeItem("pairingsRounds");
       window.localStorage.removeItem("pairingsPlayerName");
+      window.localStorage.removeItem("pairingsPlayerRating");
     }
   }
 
@@ -330,4 +338,4 @@ $(function () {
 // Example usage:
 // getChessResults("https://chess-results.com/tnr123456.aspx?lan=1&art=9&snr=1")
 //   .then(res => console.log(JSON.stringify(res, null, 2)))
-//   .catch(err => console.error(err);
+//   .catch(err => console.error(err));
