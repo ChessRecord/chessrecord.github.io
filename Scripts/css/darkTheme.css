@@ -57,6 +57,10 @@ body.dark-theme {
   color: var(--white-d);
 }
 
+.dark-theme .player-rating {
+  color: var(--white-d);
+}
+
 .dark-theme .meta-bar {
   background-color: var(--black-2a);
   border: 2px solid var(--grey-333);
