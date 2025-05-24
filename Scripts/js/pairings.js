@@ -183,13 +183,18 @@ async function getChessResults(url) {
 }
 
 // Render rounds data into #pairings-table in the required format
-function renderPairingsTable(rounds, playerName, playerRating) {
+function renderPairingsTable(rounds, playerName, playerRating, url) {
   // Show player name and rating above the table
   if (playerName) {
     if ($('#player-name').length === 0) {
       $('#pairings-table').before('<div id="player-name"></div>');
     }
-    let displayHtml = '<strong>' + playerName.replace(/,/g, "") + '</strong>';
+    let displayHtml = '';
+    if (url) {
+      displayHtml += `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName.replace(/,/g, "")}</strong></a>`;
+    } else {
+      displayHtml += '<strong>' + playerName.replace(/,/g, "") + '</strong>';
+    }
     if (playerRating) {
       displayHtml += ' <span class="player-rating">' + playerRating + '</span>';
     }
@@ -291,7 +296,7 @@ async function showPairingsTableFromInput() {
   try {
     const data = await getChessResults(url);
     const playerRating = data.playerInfo && data.playerInfo["Rating international"] ? data.playerInfo["Rating international"] : null;
-    renderPairingsTable(data.rounds, data.playerInfo && data.playerInfo["Name"], playerRating);
+    renderPairingsTable(data.rounds, data.playerInfo && data.playerInfo["Name"], playerRating, url); // pass url here
     // Cache rounds data in localStorage (also cache player name and rating)
     window.localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
     window.localStorage.setItem("pairingsPlayerName", data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "");
@@ -316,10 +321,11 @@ $(function () {
   const cachedRounds = window.localStorage.getItem("pairingsRounds");
   const cachedPlayerName = window.localStorage.getItem("pairingsPlayerName");
   const cachedPlayerRating = window.localStorage.getItem("pairingsPlayerRating");
+  const url = window.localStorage.getItem("chessResultsUrl"); // ensure url is available
   if (cachedRounds) {
     try {
       const rounds = JSON.parse(cachedRounds);
-      renderPairingsTable(rounds, cachedPlayerName, cachedPlayerRating);
+      renderPairingsTable(rounds, cachedPlayerName, cachedPlayerRating, url); // pass url here
     } catch (e) {
       // If parsing fails, clear the cache
       window.localStorage.removeItem("pairingsRounds");
