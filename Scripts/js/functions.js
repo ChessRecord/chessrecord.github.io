@@ -362,7 +362,10 @@ document.addEventListener('click', function(e) {
 /*LOADER FUNCTIONS*/
 function showLoader(target) {
   const el = document.querySelector(target);
-  el._oldLoaderValue = el.innerHTML; // Store as a property on the element
+  // Only store the old value if not already stored
+  if (typeof el._oldLoaderValue === "undefined") {
+    el._oldLoaderValue = el.innerHTML;
+  }
   document.getElementById("loader").style.display = "inline";
   el.innerHTML = "Loading";
 }
@@ -370,7 +373,10 @@ function showLoader(target) {
 function hideLoader(target) {
   const el = document.querySelector(target);
   document.getElementById("loader").style.display = "none";
-  el.innerHTML = el._oldLoaderValue; // Retrieve the stored value
+  if (typeof el._oldLoaderValue !== "undefined") {
+    el.innerHTML = el._oldLoaderValue;
+    delete el._oldLoaderValue;
+  }
 }
 
 function abbreviateTitle(title) {
