@@ -2,7 +2,7 @@
 @import url("root.css");
 
 /* ========================= */
-/* Base Dark Theme Styles   */
+/* Base Dark Theme Styles    */
 /* ========================= */
 body.dark-theme {
   background-color: var(--black-2c);
@@ -15,7 +15,6 @@ body.dark-theme {
 .dark-theme .container {
   background-color: var(--black-2c);
 }
-
 .dark-theme .container h1 {
   color: var(--white-e0);
 }
@@ -28,11 +27,9 @@ body.dark-theme {
   border: 2px solid var(--grey-333);
   box-shadow: 5px 5px 10px #1e1e1e, -5px -5px 10px #272626;
 }
-
 .dark-theme .game-entry:hover {
   background-color: var(--black-2c);
 }
-
 .dark-theme .game-round {
   color: var(--black-2c);
   background-color: var(--white-e0);
@@ -44,32 +41,30 @@ body.dark-theme {
 .dark-theme .game-details {
   color: var(--white-b0);
 }
-
 .dark-theme .game-details .entry-meta {
   color: var(--grey-888);
 }
-
 .dark-theme .game-result {
   color: var(--white-d);
 }
-
 .dark-theme .player-details span {
   color: var(--white-d);
 }
-
 .dark-theme .player-rating {
   color: var(--white-d);
 }
 
+/* ========================= */
+/* Meta Bar Styles           */
+/* ========================= */
 .dark-theme .meta-bar {
   background-color: var(--black-2a);
   border: 2px solid var(--grey-333);
 }
-
-.dark-theme .meta-bar #game-count, .dark-theme .meta-bar #tournament-count {
+.dark-theme .meta-bar #game-count,
+.dark-theme .meta-bar #tournament-count {
   color: var(--white-e0);
 }
-
 
 /* ========================= */
 /* Input and Form Styles     */
@@ -82,7 +77,6 @@ body.dark-theme {
   color: var(--white-e0);
   border: 2px solid var(--grey-444);
 }
-
 .dark-theme button {
   background-color: var(--orange);
   color: var(--white-container);
@@ -91,7 +85,11 @@ body.dark-theme {
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
+.dark-theme button.outline {
+  background-color: var(--black-2a);
+  color: var(--white-e0);
+  border: 2px solid var(--grey-555);
+}
 .dark-theme input:focus::placeholder {
   color: var(--white-container);
 }
@@ -108,47 +106,45 @@ body.dark-theme {
   --select-hover-bg: rgba(255, 255, 255, 0.1);
   --select-item-border-color: var(--grey-444);
 }
-
-.dark-theme .dropdown, .dark-theme .dropdown::before, .dark-theme .dropdown::after {
+.dark-theme .dropdown,
+.dark-theme .dropdown::before,
+.dark-theme .dropdown::after {
   background-color: var(--select-bg);
   border: 2px solid var(--grey-333);
 }
 
+/* ========================= */
+/* Miscellaneous Styles      */
+/* ========================= */
 .dark-theme .load i {
   color: var(--white-e0);
 }
 
-/* ========================= */
-/* Delete Button Styles      */
-/* ========================= */
+/* Delete Button Styles */
 .dark-theme .delete-game-btn {
   transition: background-color, color 0s;
   background-color: var(--black-2c);
   color: var(--white-e0);
 }
-
 .dark-theme .delete-game-btn:hover {
   background-color: var(--white-e0);
   color: var(--black-2c);
 }
 
-/* ========================= */
-/* Tournament Header Styles   */
-/* ========================= */
+/* Tournament Header Styles */
 .dark-theme .tournament-header {
   color: var(--white-e0);
   border-top: var(--white-e0-light) 2px solid;
   border-bottom: var(--white-e0) 2px solid;
 }
+
 /* Search Settings */
 .dark-theme #searchSettings {
   color: var(--white-e0);
 }
-
 .dark-theme .redirect i {
   color: var(--white-container);
 }
-
 .dark-theme [type="date"]::-webkit-calendar-picker-indicator {
   content: "";
   right: 18px;
@@ -160,7 +156,6 @@ body.dark-theme {
   background-size: contain;
   cursor: pointer;
 }
-
 .dark-theme .select-selected:after {
   position: absolute;
   top: calc(50% - 8px);
@@ -174,15 +169,8 @@ body.dark-theme {
   background-size: contain;
   cursor: pointer;
 }
-
 .dark-theme .confirmation {
   background-color: var(--black-2c);
   color: var(--white-e0);
   border: 2px solid var(--grey-333);
-}
-
-.dark-theme button.outline {
-  background-color: var(--black-2a);
-  color: var(--white-e0);
-  border: 2px solid var(--grey-555);
 }
