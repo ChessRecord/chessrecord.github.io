@@ -1,16 +1,15 @@
+/* Root CSS Variables */
 :root {
-  /*Colours*/
+  /* Colours */
   --white-container: #faf9f5;
   --text-100: hsl(49 19.6% 13.3%);
   --white-f1: #f1f1f1;
   --white-e: #eee;
-
   --deep-blue: #2c3e50;
   --deep-blue-light: #2c3e5060;
   --red: rgb(124, 41, 41);
   --orange: #ce643d;
   --orange80: #ce643d80;
-
   --white-e0: #e0e0e0;
   --white-e0-95: #e0e0e095;
   --white-e0-light: #e0e0e060;
@@ -27,7 +26,7 @@
   --grey-888: #888;
   --grey-999: #999;
 
-  /*Measurements*/
+  /* Measurements */
   --border-radius: 10px;
   --small-border: 6px;
   --small: 15px;
@@ -39,6 +38,7 @@
   --bad: #f44336;
 }
 
+/* Custom Select Variables */
 .custom-select {
   /* Base Color Scheme */
   --select-bg: var(--white-container);
@@ -82,6 +82,7 @@
   --select-scrollbar-thumb-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Loader Animation */
 @keyframes l2 {
   to {
     transform: rotate(1turn);
