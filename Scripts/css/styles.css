@@ -3,12 +3,12 @@
 @import url("tooltip.css");
 @import url("root.css");
 
+/* Base HTML and Reset */
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Reset and Base Styles */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -25,6 +25,18 @@ body {
 
 .fontawesome {
   font-family: "Poppins", "FontAwesome", sans-serif;
+}
+
+/* Utility Classes */
+.flex {
+  width: 100%;
+  flex-grow: 1;
+}
+
+.inlineForm {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--medium) / 2);
 }
 
 .blur {
@@ -50,61 +62,6 @@ body {
 .blur.hidden {
   opacity: 0;
   pointer-events: none;
-}
-
-.confirmation {
-  position: fixed;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--medium);
-  top: 50%;
-  left: 50%;
-  width: 30vw;
-  height: fit-content;
-  background-color: var(--white-container);
-  border-radius: var(--border-radius);
-  padding: var(--normal);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
-  border: 2px var(--white-d) solid;
-  z-index: 1000;
-  animation: slideInAbsolute 0.3s ease-out;
-  text-align: center;
-  transform: translate(-50%, -50%);
-}
-
-.confirmation i.warning-big {
-  font-size: 5rem;
-  color: var(--orange);
-}
-
-.confirmation .options {
-  width: 100%;
-  display: flex;
-  gap: var(--small);
-}
-
-.confirmation .options button {
-  width: 100%;
-  flex-grow: 1;
-}
-
-.confirmation .cancel {
-  top: 0;
-  right: 0;
-  position: absolute;
-  transform: translate(-100%, 10%);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-button.outline {
-  background-color: transparent;
-  color: var(--text-100);
-  border: 2px solid var(--white-d);
-  font-weight: 600;
-  cursor: pointer;
 }
 
 /* Container Styles */
@@ -179,23 +136,20 @@ button[type="submit"] {
   gap: var(--medium);
 }
 
+button.outline {
+  background-color: transparent;
+  color: var(--text-100);
+  border: 2px solid var(--white-d);
+  font-weight: 600;
+  cursor: pointer;
+}
+
 #searchURL {
   border-radius: 100px;
   width: fit-content !important;
 }
 
-/* Inline Form and Input Specific Styles */
-.inlineForm {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--medium) / 2);
-}
-
-.flex {
-  width: 100%;
-  flex-grow: 1;
-}
-
+/* Input Specific Styles */
 .titleInput,
 .ratingInput {
   text-align: center;
@@ -215,6 +169,129 @@ button[type="submit"] {
 #time {
   flex: 0 0 105px !important;
   width: 105px !important;
+}
+
+/* Confirmation Modal */
+.confirmation {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--medium);
+  top: 50%;
+  left: 50%;
+  width: 30vw;
+  height: fit-content;
+  background-color: var(--white-container);
+  border-radius: var(--border-radius);
+  padding: var(--normal);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+  border: 2px var(--white-d) solid;
+  z-index: 1000;
+  animation: slideInAbsolute 0.3s ease-out;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.confirmation i.warning-big {
+  font-size: 5rem;
+  color: var(--orange);
+}
+
+.confirmation .options {
+  width: 100%;
+  display: flex;
+  gap: var(--small);
+}
+
+.confirmation .options button {
+  width: 100%;
+  flex-grow: 1;
+}
+
+.confirmation .cancel {
+  top: 0;
+  right: 0;
+  position: absolute;
+  transform: translate(-100%, 10%);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Loader */
+.loader {
+  width: var(--normal);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 5px solid var(--white-e0-95);
+  border-right-color: transparent;
+  animation: l2 1s infinite linear;
+  display: none;
+}
+
+/* Notification */
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: calc(var(--small)/2) var(--small);
+  border-radius: calc(var(--border-radius)/1.5);
+  font-size: var(--small);
+  /*animation: slideOutSmallAbsolute 0.3s ease-out;*/
+}
+
+.notification.good {
+  background-color: var(--good);
+  color: var(--white-container);
+}
+
+.notification.bad {
+  background-color: var(--bad);
+  color: var(--white-container);
+}
+
+/* Navigation & Misc */
+a.redirect {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+  padding: 14px 18px;
+  background-color: transparent;
+  font-size: 24px;
+  color: var(--deep-blue);
+  cursor: pointer;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--small);
+  font-size: var(--medium);
+  cursor: pointer;
+}
+
+.filters {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+
+.load {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: var(--small);
+  font-size: var(--medium);
+  cursor: pointer;
+}
+
+.load i {
+  color: var(--deep-blue);
 }
 
 /* Animations */
@@ -270,76 +347,4 @@ button[type="submit"] {
   to {
     transform: translate(-50%, calc(-50% + 20px));
   }
-}
-
-.loader {
-  width: var(--normal);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 5px solid var(--white-e0-95);
-  border-right-color: transparent;
-  animation: l2 1s infinite linear;
-  display: none;
-}
-
-a.redirect {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 1000;
-  padding: 14px 18px;
-  background-color: transparent;
-  font-size: 24px;
-  color: var(--deep-blue);
-  cursor: pointer;
-}
-
-.options {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--small);
-  font-size: var(--medium);
-  cursor: pointer;
-}
-
-.filters {
-  display: flex;
-  flex-direction: row;
-  position: relative;
-}
-
-.load {
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  gap: var(--small);
-  font-size: var(--medium);
-  cursor: pointer;
-}
-
-.load i {
-  color: var(--deep-blue);
-}
-
-.notification {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  padding: calc(var(--small)/2) var(--small);
-  border-radius: calc(var(--border-radius)/1.5);
-  font-size: var(--small);
-  /*animation: slideOutSmallAbsolute 0.3s ease-out;*/
-}
-
-.notification.good {
-  background-color: var(--good);
-  color: var(--white-container);
-}
-
-.notification.bad {
-  background-color: var(--bad);
-  color: var(--white-container);
 }
