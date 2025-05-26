@@ -1,7 +1,9 @@
 /* Imports */
 @import url("root.css");
 
+/* ========================= */
 /* Base Custom Select Styles */
+/* ========================= */
 .custom-select {
   position: relative;
 }
@@ -10,7 +12,9 @@
   display: none;
 }
 
-/* Select Box Styles */
+/* ========================= */
+/* Select Box Styles         */
+/* ========================= */
 .select-selected,
 .select-items {
   background-color: var(--select-bg, var(--white-container));
@@ -40,7 +44,9 @@
   transform: rotate(180deg);
 }
 
-/* Items Container Styles */
+/* ========================= */
+/* Items Container Styles    */
+/* ========================= */
 .select-items {
   position: absolute;
   top: 100%;
@@ -76,7 +82,9 @@
   display: none;
 }
 
+/* ========================= */
 /* Dropdown Component Styles */
+/* ========================= */
 .dropdown {
   position: absolute;
   right: 0;
@@ -115,7 +123,9 @@
   color: var(--select-hover-color, inherit);
 }
 
-/* Autocomplete Component Styles */
+/* ========================= */
+/* Autocomplete Styles       */
+/* ========================= */
 .autocomplete-container {
   position: relative;
   display: inline-block;
@@ -150,11 +160,9 @@
 .autocomplete-suggestions::-webkit-scrollbar {
   width: var(--small-border);
 }
-
 .autocomplete-suggestions::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .autocomplete-suggestions::-webkit-scrollbar-thumb {
   background-color: var(--select-border-color);
   border-radius: 3px;
@@ -174,7 +182,9 @@
   color: var(--select-hover-color, inherit);
 }
 
-/* Custom Calendar Icon for Date Inputs */
+/* ========================= */
+/* Custom Calendar Icon      */
+/* ========================= */
 input[type="date"]::-webkit-calendar-picker-indicator {
   content: "";
   right: 18px;
