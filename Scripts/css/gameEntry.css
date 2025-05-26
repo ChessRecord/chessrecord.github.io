@@ -2,10 +2,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
 @import url("root.css");
 
+/* List Container */
 #gamesList {
   margin-top: 25px;
 }
 
+/* Game Entry Card */
 .game-entry {
   position: relative;
   display: flex;
@@ -35,33 +37,22 @@
   color: var(--grey-666);
 }
 
+/* Player Details */
 .player-details {
   display: flex;
-  justify-content: space-between; /* Ensure space between players */
-  align-items: center; /* Align items vertically centered */
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
 }
 
 .player-left {
-  text-align: left; /* Align player left text to the left */
+  text-align: left;
   clear: both;
 }
 
 .player-right {
-  text-align: right; /* Align player right text to the right */
+  text-align: right;
   clear: both;
-}
-
-.game-result {
-  position: absolute;
-  width: 50%;
-  transform: translate(50%, 0);
-  bottom: var(--small);
-  font-weight: bold;
-  font-size: 1.1em;
-  color: var(--deep-blue);
-  white-space: nowrap; /* Prevent line breaks */
-  text-align: center; /* Center the result text */
 }
 
 .game-entry .player-left a,
@@ -92,6 +83,20 @@
   font-family: "Rubik", sans-serif;
 }
 
+/* Game Result */
+.game-result {
+  position: absolute;
+  width: 50%;
+  transform: translate(50%, 0);
+  bottom: var(--small);
+  font-weight: bold;
+  font-size: 1.1em;
+  color: var(--deep-blue);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Delete Button */
 .delete-game-btn {
   position: absolute;
   left: 100%;
@@ -104,8 +109,8 @@
   border: none;
   cursor: pointer;
   font-size: 1.2em;
-  visibility: hidden; /* Initially hidden */
-  opacity: 0; /* Initially hidden */
+  visibility: hidden;
+  opacity: 0;
   padding: 5px;
   transition: background-color, color, transform 0.1s;
   background-color: var(--white-container);
@@ -115,8 +120,8 @@
 }
 
 .game-entry:hover .delete-game-btn {
-  visibility: visible; /* Visible on hover */
-  opacity: 1; /* Visible on hover */
+  visibility: visible;
+  opacity: 1;
   transform: translate(-50%, 37.5%);
 }
 
@@ -125,6 +130,7 @@
   color: #fff;
 }
 
+/* Game Entry Link */
 .game-entry-link {
   text-decoration: none;
   color: inherit;
@@ -136,11 +142,13 @@
   text-decoration: none;
 }
 
+/* Game Time */
 .game-time {
   font-weight: 600;
   font-family: "Rubik", sans-serif;
 }
 
+/* Tournament Header & Section */
 .tournament-header {
   display: flex;
   flex-direction: row;
@@ -149,23 +157,11 @@
   transition: all 0.3s ease;
   color: var(--deep-blue);
   padding: 10px 25px;
-  padding-left: 15px !important; 
+  padding-left: 15px !important;
   margin-bottom: 10px;
   border-top: var(--deep-blue-light) 2px solid;
   border-bottom: var(--deep-blue) 2px solid;
 }
-
-/*.tournament-header:hover {
-  padding-left: 10px;
-}
-
-.tournament-header .dot {
-  transition: all 0.3s;
-}
-
-.tournament-header:hover .dot {
-  font-size: 1.5em;
-}*/
 
 .tournament-section {
   margin-bottom: 25px;
@@ -182,6 +178,7 @@
   background-color: var(--deep-blue);
 }
 
+/* Search Bar */
 #search {
   display: flex;
   flex-direction: row;
@@ -193,6 +190,7 @@
   width: 100%;
 }
 
+/* Meta Bar */
 .meta-bar {
   position: fixed;
   bottom: 0;
@@ -209,5 +207,25 @@
 .meta-bar #game-count, .meta-bar #tournament-count {
   font-weight: 600;
   font-size: 0.8125rem;
+  color: var(--deep-blue);
+}
+
+/* Misc */
+.filters {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+
+.load {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: var(--small);
+  font-size: var(--medium);
+  cursor: pointer;
+}
+
+.load i {
   color: var(--deep-blue);
 }
