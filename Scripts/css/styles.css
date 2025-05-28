@@ -294,6 +294,11 @@ a.redirect {
   color: var(--deep-blue);
 }
 
+span.gap {
+  display: inline-block;
+  width: 0.5rem;
+}
+
 /* Animations */
 @keyframes slideInAbsolute {
   from {

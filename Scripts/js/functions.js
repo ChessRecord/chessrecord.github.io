@@ -510,6 +510,13 @@ function importJSON(event) {
         return;
       }
 
+      // Check for missing gameLink in any game
+      if (importedData.some(game => !game.gameLink)) {
+        alert("Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.");
+        input.value = "";
+        return;
+      }
+
       // ✅ If games list is empty, just replace directly
       if (isEmpty(window.games)) {
         importedData.forEach(game => game.id = generateUniqueID());
@@ -656,11 +663,11 @@ function displayGames(searchTerm = "") {
                             const category = getTimeControlCategory(game.time);
                             switch (category) {
                               case "Blitz":
-                                return '<i class="fa-solid fa-bolt-lightning"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                                return '<i class="fa-solid fa-bolt-lightning"></i><span class="gap"></span>';
                               case "Rapid":
-                                return '<i class="fa-solid fa-clock"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                                return '<i class="fa-solid fa-clock"></i><span class="gap"></span>';
                               case "Classical":
-                                return '<i class="fa-solid fa-hourglass-half"></i><span style="display: inline-block;width: 0.5rem;"></span>';
+                                return '<i class="fa-solid fa-hourglass-half"></i><span class="gap"></span>';
                               default:
                                 return "";
                             }
