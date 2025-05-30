@@ -146,7 +146,7 @@ async function getChessResults(url) {
       boardNo: pairing.boardNo,
       playerStartNo: pairing.playerStartNo,
       opponentTitle: pairing.opponentTitle,
-      opponentName: pairing.opponentName.replace(/,/g, ""),
+      opponentName: pairing.opponentName,
       opponentRating: oppRating,
       opponentFederation: pairing.opponentFederation,
       opponentClub: pairing.opponentClub,
@@ -191,9 +191,9 @@ function renderPairingsTable(rounds, playerName, playerRating, url) {
     }
     let displayHtml = '';
     if (url) {
-      displayHtml += `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName.replace(/,/g, "")}</strong></a>`;
+      displayHtml += `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName}</strong></a>`;
     } else {
-      displayHtml += '<strong>' + playerName.replace(/,/g, "") + '</strong>';
+      displayHtml += '<strong>' + playerName + '</strong>';
     }
     if (playerRating) {
       displayHtml += ' <span class="player-rating">' + playerRating + '</span>';
