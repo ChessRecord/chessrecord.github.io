@@ -660,7 +660,6 @@ function displayGames(searchTerm = "") {
       a.href = game.gameLink;
       a.target = '_blank';
       a.className = 'game-entry-link';
-      // Minimize repeated computation by caching category
       const category = getTimeControlCategory(game.time);
       a.innerHTML = `
         <div class="game-entry" data-game-id="${game.id}">
@@ -684,7 +683,7 @@ function displayGames(searchTerm = "") {
                     if (!game.time) return "</span>";
                     return category === "Unknown"
                       ? `${game.time} </span> | `
-                      : `${game.time} • ${category}</span> | `;
+                      : `${game.time} • <span style="font-family: 'Poppins', sans-serif;">${category}</span></span> | `;
                   })()}
                   ${game.date ? `<strong>${game.date}</strong>` : ""}
                 </span>
