@@ -642,73 +642,77 @@ function displayGames(searchTerm = "") {
     gamesArr.sort((a, b) => (a.round || 0) - (b.round || 0));
   });
 
-  // Generate HTML with tournament headers
-  gamesList.innerHTML = Object.entries(gamesByTournament)
-    .map(([tournament, tournamentGames]) => `
-      <div class="tournament-section">
-        <div class="tournament-header">
-          <h3>${tournament}</h3>
-          <h3 class="dot">●</h3>
-        </div>
-        ${tournamentGames
-          .map(
-            (game) => `
-              <a href="${game.gameLink}" target="_blank" class="game-entry-link">
-                <div class="game-entry" data-game-id="${game.id}">
-                    <div class="game-details" style="align-items: center;">
-                        <div class="game-tournament"><span class="game-round">${game.round}</span><strong>Round ${game.round}</strong></div>
-                        <span class="entry-meta">
-                          <span class="game-time">
-                          ${(() => {
-                            const category = getTimeControlCategory(game.time);
-                            switch (category) {
-                              case "Blitz":
-                                return '<i class="fa-solid fa-bolt-lightning"></i><span class="gap"></span>';
-                              case "Rapid":
-                                return '<i class="fa-solid fa-clock"></i><span class="gap"></span>';
-                              case "Classical":
-                                return '<i class="fa-solid fa-hourglass-half"></i><span class="gap"></span>';
-                              default:
-                                return "";
-                            }
-                          })()}
-                          ${(() => {
-                            if (!game.time) return "</span>";
-                            const category = getTimeControlCategory(game.time);
-                            return category === "Unknown"
-                              ? `${game.time} </span> | `
-                              : `${game.time} • ${category}</span> | `;
-                          })()}
-                          ${game.date ? `<strong>${game.date}</strong>` : ""}
-                        </span>
-                    </div>
-                    <div class="player-details">
-                      <div class="player-left">
-                            <span>
-                                <span class="title">${game.whiteTitle}</span> ${game.white} <span class="player-rating">${game.whiteRating}</span>
-                            </span>
-                      </div>
-                      <div class="game-result">
-                        <strong>${formatResult(game.result)}</strong>
-                      </div>
-                      <div class="player-right">
-                        <span>
-                          <span class="title">${game.blackTitle}</span> ${game.black} <span class="player-rating">${game.blackRating}</span>
-                        </span>
-                      </div>
-                    </div>
-                    <button class="delete-game-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteGame('${game.id}')">
-                      <span class="fontawesome"></span>
-                    </button>
-
-                </div>
-              </a>
-            `
-          )
-          .join("")}
+  // Batch DOM updates using DocumentFragment
+  const fragment = document.createDocumentFragment();
+  Object.entries(gamesByTournament).forEach(([tournament, tournamentGames]) => {
+    const section = document.createElement('div');
+    section.className = 'tournament-section';
+    section.innerHTML = `
+      <div class="tournament-header">
+        <h3>${tournament}</h3>
+        <h3 class="dot">●</h3>
       </div>
-    `)
-    .join("");
+    `;
+    tournamentGames.forEach((game) => {
+      const a = document.createElement('a');
+      a.href = game.gameLink;
+      a.target = '_blank';
+      a.className = 'game-entry-link';
+      a.innerHTML = `
+        <div class="game-entry" data-game-id="${game.id}">
+            <div class="game-details" style="align-items: center;">
+                <div class="game-tournament"><span class="game-round">${game.round}</span><strong>Round ${game.round}</strong></div>
+                <span class="entry-meta">
+                  <span class="game-time">
+                  ${(() => {
+                    const category = getTimeControlCategory(game.time);
+                    switch (category) {
+                      case "Blitz":
+                        return '<i class="fa-solid fa-bolt-lightning"></i><span class="gap"></span>';
+                      case "Rapid":
+                        return '<i class="fa-solid fa-clock"></i><span class="gap"></span>';
+                      case "Classical":
+                        return '<i class="fa-solid fa-hourglass-half"></i><span class="gap"></span>';
+                      default:
+                        return "";
+                    }
+                  })()}
+                  ${(() => {
+                    if (!game.time) return "</span>";
+                    const category = getTimeControlCategory(game.time);
+                    return category === "Unknown"
+                      ? `${game.time} </span> | `
+                      : `${game.time} • ${category}</span> | `;
+                  })()}
+                  ${game.date ? `<strong>${game.date}</strong>` : ""}
+                </span>
+            </div>
+            <div class="player-details">
+              <div class="player-left">
+                    <span>
+                        <span class="title">${game.whiteTitle}</span> ${game.white} <span class="player-rating">${game.whiteRating}</span>
+                    </span>
+              </div>
+              <div class="game-result">
+                <strong>${formatResult(game.result)}</strong>
+              </div>
+              <div class="player-right">
+                <span>
+                  <span class="title">${game.blackTitle}</span> ${game.black} <span class="player-rating">${game.blackRating}</span>
+                </span>
+              </div>
+            </div>
+            <button class="delete-game-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteGame('${game.id}')">
+              <span class="fontawesome"></span>
+            </button>
+        </div>
+      `;
+      section.appendChild(a);
+    });
+    fragment.appendChild(section);
+  });
+  gamesList.innerHTML = '';
+  gamesList.appendChild(fragment);
 
   refreshTitle();
 }
