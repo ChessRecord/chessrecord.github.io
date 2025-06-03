@@ -303,37 +303,39 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // Event delegation for whiteSuggestions
+  const whiteSuggestions = document.getElementById('whiteSuggestions');
+  if (whiteSuggestions) {
+    whiteSuggestions.addEventListener('click', function(e) {
+      const suggestionItem = e.target.closest('.autocomplete-suggestion');
+      if (suggestionItem) {
+        const playerInput = document.getElementById('playerWhite');
+        const titleElement = document.getElementById('whiteTitle');
+        playerInput.value = suggestionItem.dataset.name;
+        titleElement.value = suggestionItem.dataset.title;
+        playerInput.dataset.title = suggestionItem.dataset.title;
+        this.innerHTML = '';
+      }
+    });
+  }
+
+  // Event delegation for blackSuggestions
+  const blackSuggestions = document.getElementById('blackSuggestions');
+  if (blackSuggestions) {
+    blackSuggestions.addEventListener('click', function(e) {
+      const suggestionItem = e.target.closest('.autocomplete-suggestion');
+      if (suggestionItem) {
+        const playerInput = document.getElementById('playerBlack');
+        const titleElement = document.getElementById('blackTitle');
+        playerInput.value = suggestionItem.dataset.name;
+        titleElement.value = suggestionItem.dataset.title;
+        playerInput.dataset.title = suggestionItem.dataset.title;
+        this.innerHTML = '';
+      }
+    });
+  }
 });
-
-const whiteSuggestions = document.getElementById('whiteSuggestions');
-if (whiteSuggestions) {
-  whiteSuggestions.addEventListener('click', function(e) {
-    const suggestionItem = e.target.closest('.autocomplete-suggestion');
-    if (suggestionItem) {
-      const playerInput = document.getElementById('playerWhite');
-      const titleElement = document.getElementById('whiteTitle');
-      playerInput.value = suggestionItem.dataset.name;
-      titleElement.value = suggestionItem.dataset.title;
-      playerInput.dataset.title = suggestionItem.dataset.title;
-      this.innerHTML = '';
-    }
-  });
-}
-
-const blackSuggestions = document.getElementById('blackSuggestions');
-if (blackSuggestions) {
-  blackSuggestions.addEventListener('click', function(e) {
-    const suggestionItem = e.target.closest('.autocomplete-suggestion');
-    if (suggestionItem) {
-      const playerInput = document.getElementById('playerBlack');
-      const titleElement = document.getElementById('blackTitle');
-      playerInput.value = suggestionItem.dataset.name;
-      titleElement.value = suggestionItem.dataset.title;
-      playerInput.dataset.title = suggestionItem.dataset.title;
-      this.innerHTML = '';
-    }
-  });
-}
 
 // Add Escape key functionality to close suggestions
 document.addEventListener('keydown', function(e) {
@@ -658,6 +660,8 @@ function displayGames(searchTerm = "") {
       a.href = game.gameLink;
       a.target = '_blank';
       a.className = 'game-entry-link';
+      // Minimize repeated computation by caching category
+      const category = getTimeControlCategory(game.time);
       a.innerHTML = `
         <div class="game-entry" data-game-id="${game.id}">
             <div class="game-details" style="align-items: center;">
@@ -665,7 +669,6 @@ function displayGames(searchTerm = "") {
                 <span class="entry-meta">
                   <span class="game-time">
                   ${(() => {
-                    const category = getTimeControlCategory(game.time);
                     switch (category) {
                       case "Blitz":
                         return '<i class="fa-solid fa-bolt-lightning"></i><span class="gap"></span>';
@@ -679,7 +682,6 @@ function displayGames(searchTerm = "") {
                   })()}
                   ${(() => {
                     if (!game.time) return "</span>";
-                    const category = getTimeControlCategory(game.time);
                     return category === "Unknown"
                       ? `${game.time} </span> | `
                       : `${game.time} • ${category}</span> | `;
