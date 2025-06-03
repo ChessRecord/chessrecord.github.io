@@ -412,13 +412,13 @@ function exportJSON() {
     return;
   }
 
-  // Convert the games array to a JSON string
-  const dataInitial = JSON.parse(JSON.stringify(window.games));
-
-  // Remove the "id" key from each game object
-  dataInitial.forEach(game => {
-    delete game.id;
-    game.result = normalizeResult(game.result);
+  // Create a new array with the required modifications
+  const dataInitial = window.games.map(game => {
+    const { id, ...rest } = game;
+    return {
+      ...rest,
+      result: normalizeResult(game.result)
+    };
   });
 
   // Convert the modified array to a JSON string
