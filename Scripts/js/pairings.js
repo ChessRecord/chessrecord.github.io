@@ -42,6 +42,28 @@ async function scrapeChessResults(url) {
     "Res.": "result",
   };
 
+  // Helper to build opponent profile URL by replacing snr in the original url
+  function buildOpponentProfileUrl(baseUrl, opponentStartNo) {
+    if (!baseUrl || !opponentStartNo || isNaN(Number(opponentStartNo))) return null;
+    try {
+      const urlObj = new URL(baseUrl);
+      urlObj.searchParams.set('snr', String(Number(opponentStartNo)));
+      return urlObj.toString();
+    } catch {
+      if (typeof baseUrl === 'string') {
+        const snr = encodeURIComponent(String(Number(opponentStartNo)));
+        if (baseUrl.includes('snr=')) {
+          return baseUrl.replace(/([?&]snr=)[^&]*/, '$1' + snr);
+        } else if (baseUrl.includes('?')) {
+          return baseUrl + '&snr=' + snr;
+        } else {
+          return baseUrl + '?snr=' + snr;
+        }
+      }
+      return null;
+    }
+  }
+
   const pairings = [];
 
   rows.each((i, row) => {
@@ -82,7 +104,7 @@ async function scrapeChessResults(url) {
               : $(row).find("td:eq(" + (headerKeys.indexOf("Res.")) + ") div.FarbewT").length > 0
               ? "White"
               : "",
-          opponentProfileUrl: nameLink ? "https://chess-results.com/" + nameLink : null
+          opponentProfileUrl: buildOpponentProfileUrl(url, rowObj["SNo"])
         };
 
         pairings.push(pairing);
