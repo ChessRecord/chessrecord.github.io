@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="ChessRecord - Log and Store Your Chess Games"
+    />
+    <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChessRecord - PGN to Database Converter</title>
+    <link rel="icon" type="image/x-icon" href="Scripts/knight.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="Scripts/css/styles.css" />
+    <link rel="stylesheet" href="Scripts/css/responsive.css" />
+    <link rel="stylesheet" href="Scripts/css/customSelect.css" />
+    <link rel="stylesheet" href="Scripts/css/gameEntry.css" />
+    <link rel="stylesheet" href="Scripts/css/darkTheme.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>PGN to Database Converter</h1>
+      <form id="PGN-Form" onsubmit="return false;">
+        <div style="display: flex; flex-direction: column; gap: 20px; min-height: 60vh;">
+          <textarea id="PGN" placeholder="Enter PGN"></textarea>
+          <button type="submit">
+            <span>Download JSON</span>
+            <div class="loader" id="loader"></div>
+          </button>
+          <pre id="JSON" style="flex: 1 1 auto; min-height: 200px;"></pre>
+        </div>
+      </form>
+    </div>
+    <script src="Scripts/js/functions.js"></script>
+    <script src="Scripts/js/convert.js"></script>
+    <script src="Scripts/js/customSelect.js"></script>
+    <script src="Scripts/js/darkTheme.js"></script>
+    <script src="Scripts/js/dropdown.js"></script>
+  </body>
+</html>

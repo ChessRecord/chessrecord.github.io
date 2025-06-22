@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="ChessRecord - Log and Store Your Chess Games"
+    />
+    <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChessRecord</title>
+    <link rel="icon" type="image/x-icon" href="Scripts/knight.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="Scripts/css/styles.css" />
+    <link rel="stylesheet" href="Scripts/css/responsive.css" />
+    <link rel="stylesheet" href="Scripts/css/customSelect.css" />
+    <link rel="stylesheet" href="Scripts/css/gameEntry.css" />
+    <link rel="stylesheet" href="Scripts/css/darkTheme.css" />
+  </head>
+  <body>
+    <div class="blur hidden" id="blur">
+    </div>
+    <div class="container">
+      <h1>Chess Games Tracker</h1>
+        <div class="filters">
+          <div id="search">
+            <input
+              type="text"
+              class="fontawesome"
+              id="searchInput"
+              placeholder="  Search by player or tournament name"
+            />
+          </div>
+          <div class="options">
+            <span class="fontawesome"></span>
+          </div>
+          <div class="dropdown">
+            <a onclick="document.getElementById('fileInput').click();" class="dropdown-item">
+              <div class="load">
+                <i class="fa-solid fa-folder-open"></i>
+                <span style="font-size: var(--small);">Import Games</span>
+              </div>
+              <input
+                type="file"
+                id="fileInput"
+                accept=".json,.pgn"
+                style="display: none"
+                onchange="importJSON(event)"
+              />
+            </a>
+            <a onclick="exportJSON()" class="dropdown-item">
+              <div class="load">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span style="font-size: var(--small);">Export Games</span>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div id="gamesList"></div>
+    </div>
+    <div class="meta-bar">
+      <div id="game-count">
+      </div>
+      <div id="tournament-count">
+      </div>
+    </div>
+    <script src="Scripts/js/functions.js"></script>
+    <script src="Scripts/js/games.js"></script>
+    <script src="Scripts/js/customSelect.js"></script>
+    <script src="Scripts/js/darkTheme.js"></script>
+    <script src="Scripts/js/dropdown.js"></script>
+  </body>
+</html>

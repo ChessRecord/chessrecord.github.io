@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="ChessRecord - Log and Store Your Chess Games"
+    />
+    <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChessRecord</title>
+    <link rel="icon" type="image/x-icon" href="../Scripts/knight.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="../Scripts/css/styles.css" />
+    <link rel="stylesheet" href="../Scripts/css/responsive.css" />
+    <link rel="stylesheet" href="../Scripts/css/customSelect.css" />
+    <link rel="stylesheet" href="../Scripts/css/gameEntry.css" />
+    <link rel="stylesheet" href="../Scripts/css/darkTheme.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Chess Games Tracker</h1>
+        <form id="gameForm" onsubmit="return false;">
+          <div class="inlineForm">
+            <input
+              type="number"
+              id="whiteFIDE"
+              class="flex"
+              placeholder="White Player FIDE ID"
+              required
+              title="Please enter a valid FIDE ID"
+            />
+          </div>
+          <div class="inlineForm">
+            <input
+              type="number"
+              id="blackFIDE"
+              class="flex"
+              placeholder="Black Player FIDE ID"
+              required
+              title="Please enter a valid FIDE ID"
+            />
+          </div>
+          <div class="custom-select">
+            <select id="result" required title="Please select the game result">
+              <option value="0">Result</option>
+              <option value="1 - 0">1 - 0</option>
+              <option value="0 - 1">0 - 1</option>
+              <option value="½ - ½">½ - ½</option>
+            </select>
+          </div>
+          <div class="inlineForm">
+            <input
+              type="text"
+              id="tournament"
+              placeholder="Tournament"
+              class="flex"
+              required
+              title="Please enter the tournament name"
+            />
+            <input
+              type="number"
+              id="round"
+              placeholder="Round"
+              min="1"
+              class="flex"
+              required
+              title="Please enter the round number"
+            />
+            <input
+              type="text"
+              id="time"
+              placeholder="Time"
+              class="flex"
+              required
+              title="Please enter the time control"
+            />
+          </div>
+          <input
+            type="date"
+            id="date"
+            required
+            title="Please enter the date of the game"
+          />
+          <input
+            type="url"
+            id="gameLink"
+            placeholder="Game Link"
+            required
+            title="Please enter the game link"
+          />
+          <button type="submit" id="addGame">
+            <span>Add Game</span>
+            <div class="loader" id="loader"></div>
+          </button>
+        </form>
+    </div>
+    <a href="./custom" class="redirect tooltip">
+      <i class="fa-solid fa-rocket"></i>
+      <span class="tooltiptext">Use Player Names For Input</span>
+    </a>
+    <script src="../Scripts/js/functions.js"></script>
+    <script src="../Scripts/js/script.js"></script>
+    <script src="../Scripts/js/customSelect.js"></script>
+    <script src="../Scripts/js/darkTheme.js"></script>
+    <script src="../Scripts/js/dropdown.js"></script>
+  </body>
+</html>

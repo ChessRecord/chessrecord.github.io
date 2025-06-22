@@ -1,0 +1,198 @@
+/* Imports */
+@import url("root.css");
+
+/* ========================= */
+/* Base Custom Select Styles */
+/* ========================= */
+.custom-select {
+  position: relative;
+}
+
+.custom-select select {
+  display: none;
+}
+
+/* ========================= */
+/* Select Box Styles         */
+/* ========================= */
+.select-selected,
+.select-items {
+  background-color: var(--select-bg, var(--white-container));
+  color: var(--select-text-color, #333);
+  padding: 14px 18px;
+  border: 2px solid var(--select-border-color);
+  border-radius: var(--border-radius);
+  font-size: var(--small);
+}
+
+/* Arrow Styles */
+.select-selected:after {
+  position: absolute;
+  top: calc(50% - 8px);
+  content: "";
+  right: 18px;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23495057' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
+}
+
+.select-selected.select-arrow-active:after {
+  transform: rotate(180deg);
+}
+
+/* ========================= */
+/* Items Container Styles    */
+/* ========================= */
+.select-items {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  margin-top: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.17);
+}
+
+/* Items Styles */
+.select-items div,
+.dropdown-item {
+  padding: 8px 16px;
+  border-radius: var(--small-border);
+  color: var(--select-item-color, #333);
+  cursor: pointer;
+  user-select: none;
+}
+
+.select-items div:last-child {
+  border-bottom: none;
+}
+
+/* Item States */
+.select-items div:hover,
+.same-as-selected {
+  background-color: var(--select-hover-bg, rgba(0, 0, 0, 0.1));
+  color: var(--select-hover-color, inherit);
+}
+
+.select-hide {
+  display: none;
+}
+
+/* ========================= */
+/* Dropdown Component Styles */
+/* ========================= */
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 5px;
+  width: 200px;
+  background-color: var(--white-container);
+  border: 2px solid var(--select-border-color);
+  border-radius: var(--border-radius);
+  padding: var(--small) calc(var(--small) / 2);
+  z-index: 100;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.17);
+  display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  border: 2px var(--white-d) solid;
+}
+
+/* Dropdown States */
+.dropdown.show {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+  animation: slideInSmall 0.1s ease-out;
+}
+
+.dropdown-item {
+  font-size: var(--small);
+  gap: var(--small);
+}
+
+.dropdown-item:hover {
+  background-color: var(--select-hover-bg, rgba(0, 0, 0, 0.1));
+  color: var(--select-hover-color, inherit);
+}
+
+/* ========================= */
+/* Autocomplete Styles       */
+/* ========================= */
+.autocomplete-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+/* Suggestions Container */
+.autocomplete-suggestions {
+  position: absolute;
+  background-color: var(--select-bg, var(--white-container));
+  color: var(--select-text-color, #333);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 99;
+  width: 100%;
+  margin-top: 8px;
+  padding: var(--small-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border: 2px solid var(--select-border-color);
+  border-radius: var(--border-radius);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--select-border-color) transparent;
+}
+
+/* Suggestions States */
+.autocomplete-suggestions:empty {
+  display: none;
+}
+
+/* Scrollbar Styles */
+.autocomplete-suggestions::-webkit-scrollbar {
+  width: var(--small-border);
+}
+.autocomplete-suggestions::-webkit-scrollbar-track {
+  background: transparent;
+}
+.autocomplete-suggestions::-webkit-scrollbar-thumb {
+  background-color: var(--select-border-color);
+  border-radius: 3px;
+}
+
+/* Suggestion Items */
+.autocomplete-suggestion {
+  color: var(--select-item-color, #333);
+  padding: 8px 16px;
+  border-radius: var(--small-border);
+  cursor: pointer;
+  user-select: none;
+}
+
+.autocomplete-suggestion:hover {
+  background-color: var(--select-hover-bg, rgba(0, 0, 0, 0.1));
+  color: var(--select-hover-color, inherit);
+}
+
+/* ========================= */
+/* Custom Calendar Icon      */
+/* ========================= */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  content: "";
+  right: 18px;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23495057' viewBox='0 0 448 512'%3E%3Cpath d='M96 32l0 32L48 64C21.5 64 0 85.5 0 112l0 48 448 0 0-48c0-26.5-21.5-48-48-48l-48 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 32L160 64l0-32c0-17.7-14.3-32-32-32S96 14.3 96 32zM448 192L0 192 0 464c0 26.5 21.5 48 48 48l352 0c26.5 0 48-21.5 48-48l0-272z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
+}

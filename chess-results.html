@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="ChessRecord - Log and Store Your Chess Games"
+    />
+    <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChessRecord</title>
+    <link rel="icon" type="image/x-icon" href="Scripts/knight.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="Scripts/css/styles.css" />
+    <link rel="stylesheet" href="Scripts/css/pairings.css" />
+    <link rel="stylesheet" href="Scripts/css/responsive.css" />
+    <link rel="stylesheet" href="Scripts/css/customSelect.css" />
+    <link rel="stylesheet" href="Scripts/css/gameEntry.css" />
+    <link rel="stylesheet" href="Scripts/css/darkTheme.css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" style="width: 90%;">
+      <h1>Chess Pairings & Rating Calculator</h1>
+      <form id="chess-resultsForm" onsubmit="return false;">
+        <span class="inlineForm">
+          <input
+            type="url"
+            id="url-input"
+            class="flex"
+            placeholder="Paste Chess-Results pairing link..."
+            required
+            title="Please enter a valid chess-results player profile URL"
+          />
+          <button type="submit" id="searchURL">
+            <span class="fontawesome" style="white-space: nowrap"></span>
+            <div class="loader" id="loader"></div>
+          </button>
+        </span>
+      </form>
+      <div class="table" id="pairings-table"></div>
+    </div>
+    <script src="Scripts/js/functions.js"></script>
+    <script src="Scripts/js/pairings.js"></script>
+    <script src="Scripts/js/customSelect.js"></script>
+    <script src="Scripts/js/darkTheme.js"></script>
+    <script src="Scripts/js/dropdown.js"></script>
+  </body>
+</html>

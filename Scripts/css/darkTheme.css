@@ -1,0 +1,176 @@
+/* Imports */
+@import url("root.css");
+
+/* ========================= */
+/* Base Dark Theme Styles    */
+/* ========================= */
+body.dark-theme {
+  background-color: var(--black-2c);
+  color: var(--white-e0);
+}
+
+/* ========================= */
+/* Container Styles          */
+/* ========================= */
+.dark-theme .container {
+  background-color: var(--black-2c);
+}
+.dark-theme .container h1 {
+  color: var(--white-e0);
+}
+
+/* ========================= */
+/* Game Entry Styles         */
+/* ========================= */
+.dark-theme .game-entry {
+  background-color: var(--black-2a);
+  border: 2px solid var(--grey-333);
+  box-shadow: 5px 5px 10px #1e1e1e, -5px -5px 10px #272626;
+}
+.dark-theme .game-entry:hover {
+  background-color: var(--black-2c);
+}
+.dark-theme .game-round {
+  color: var(--black-2c);
+  background-color: var(--white-e0);
+}
+
+/* ========================= */
+/* Game Details Styles       */
+/* ========================= */
+.dark-theme .game-details {
+  color: var(--white-b0);
+}
+.dark-theme .game-details .entry-meta {
+  color: var(--grey-888);
+}
+.dark-theme .game-result {
+  color: var(--white-d);
+}
+.dark-theme .player-details span {
+  color: var(--white-d);
+}
+.dark-theme .player-rating {
+  color: var(--white-d);
+}
+
+/* ========================= */
+/* Meta Bar Styles           */
+/* ========================= */
+.dark-theme .meta-bar {
+  background-color: var(--black-2a);
+  border: 2px solid var(--grey-333);
+}
+.dark-theme .meta-bar #game-count,
+.dark-theme .meta-bar #tournament-count {
+  color: var(--white-e0);
+}
+
+/* ========================= */
+/* Input and Form Styles     */
+/* ========================= */
+.dark-theme input,
+.dark-theme textarea,
+.dark-theme select,
+.dark-theme button {
+  background-color: var(--black-2c);
+  color: var(--white-e0);
+  border: 2px solid var(--grey-444);
+}
+.dark-theme button {
+  background-color: var(--orange);
+  color: var(--white-container);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.dark-theme button.outline {
+  background-color: var(--black-2a);
+  color: var(--white-e0);
+  border: 2px solid var(--grey-555);
+}
+.dark-theme input:focus::placeholder {
+  color: var(--white-container);
+}
+
+/* ========================= */
+/* Custom Select Styles      */
+/* ========================= */
+.dark-theme, .dark-theme .custom-select {
+  --select-bg: var(--dark-bg, #2c2c2c);
+  --select-text-color: var(--dark-text, #ccc);
+  --select-arrow-color: #ccc;
+  --select-border-color: var(--grey-444);
+  --select-item-color: #ccc;
+  --select-hover-bg: rgba(255, 255, 255, 0.1);
+  --select-item-border-color: var(--grey-444);
+}
+.dark-theme .dropdown,
+.dark-theme .dropdown::before,
+.dark-theme .dropdown::after {
+  background-color: var(--select-bg);
+  border: 2px solid var(--grey-333);
+}
+
+/* ========================= */
+/* Miscellaneous Styles      */
+/* ========================= */
+.dark-theme .load i {
+  color: var(--white-e0);
+}
+
+/* Delete Button Styles */
+.dark-theme .delete-game-btn {
+  transition: background-color, color 0s;
+  background-color: var(--black-2c);
+  color: var(--white-e0);
+}
+.dark-theme .delete-game-btn:hover {
+  background-color: var(--white-e0);
+  color: var(--black-2c);
+}
+
+/* Tournament Header Styles */
+.dark-theme .tournament-header {
+  color: var(--white-e0);
+  border-top: var(--white-e0-light) 2px solid;
+  border-bottom: var(--white-e0) 2px solid;
+}
+
+/* Search Settings */
+.dark-theme #searchSettings {
+  color: var(--white-e0);
+}
+.dark-theme .redirect i {
+  color: var(--white-container);
+}
+.dark-theme [type="date"]::-webkit-calendar-picker-indicator {
+  content: "";
+  right: 18px;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23e0e0e0' viewBox='0 0 448 512'%3E%3Cpath d='M96 32l0 32L48 64C21.5 64 0 85.5 0 112l0 48 448 0 0-48c0-26.5-21.5-48-48-48l-48 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 32L160 64l0-32c0-17.7-14.3-32-32-32S96 14.3 96 32zM448 192L0 192 0 464c0 26.5 21.5 48 48 48l352 0c26.5 0 48-21.5 48-48l0-272z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
+}
+.dark-theme .select-selected:after {
+  position: absolute;
+  top: calc(50% - 8px);
+  content: "";
+  right: 18px;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23e0e0e0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
+}
+.dark-theme .confirmation {
+  background-color: var(--black-2c);
+  color: var(--white-e0);
+  border: 2px solid var(--grey-333);
+}

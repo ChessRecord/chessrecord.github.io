@@ -1,0 +1,90 @@
+/* Root CSS Variables */
+:root {
+  /* Colours */
+  --white-container: #faf9f5;
+  --text-100: hsl(49 19.6% 13.3%);
+  --white-f1: #f1f1f1;
+  --white-e: #eee;
+  --deep-blue: #2c3e50;
+  --deep-blue-light: #2c3e5060;
+  --red: rgb(124, 41, 41);
+  --orange: #ce643d;
+  --orange80: #ce643d80;
+  --white-e0: #e0e0e0;
+  --white-e0-95: #e0e0e095;
+  --white-e0-light: #e0e0e060;
+  --white-b0: #b0b0b0;
+  --white-c: #ccc;
+  --white-d: #ddd;
+  --black-2c: #2c2c2c;
+  --black-2a: #2a2a2a;
+  --grey-333: #333;
+  --grey-444: #444;
+  --grey-555: #555;
+  --grey-666: #666;
+  --grey-777: #777;
+  --grey-888: #888;
+  --grey-999: #999;
+
+  /* Measurements */
+  --border-radius: 10px;
+  --small-border: 6px;
+  --small: 15px;
+  --medium: 20px;
+  --normal: 25px;
+  --large: 30px;
+
+  --good: #4caf50;
+  --bad: #f44336;
+}
+
+/* Custom Select Variables */
+.custom-select {
+  /* Base Color Scheme */
+  --select-bg: var(--white-container);
+  --select-text-color: #333;
+  --select-arrow-color: #666;
+
+  /* Enhanced Color Variants */
+  --select-border-color: rgba(0, 0, 0, 0.1);
+  --select-hover-bg: rgba(0, 0, 0, 0.05);
+  --select-active-bg: rgba(0, 0, 0, 0.1);
+
+  /* Typography */
+  --select-font-size: 15px;
+  --select-font-weight: 400;
+  --select-line-height: 1.5;
+
+  /* Spacing */
+  --select-padding-vertical: 12px;
+  --select-padding-horizontal: 16px;
+  --select-border-radius: 10px;
+
+  /* Transitions */
+  --select-transition-speed: 0.2s;
+  --select-transition-timing: ease-in-out;
+
+  /* Shadow */
+  --select-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --select-hover-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+
+  /* Interaction States */
+  --select-focus-border-color: #4a90e2;
+  --select-focus-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+
+  /* Dropdown Specific */
+  --select-dropdown-max-height: 250px;
+  --select-dropdown-z-index: 100;
+
+  /* Scrollbar (if applicable) */
+  --select-scrollbar-width: 8px;
+  --select-scrollbar-track-color: rgba(0, 0, 0, 0.05);
+  --select-scrollbar-thumb-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Loader Animation */
+@keyframes l2 {
+  to {
+    transform: rotate(1turn);
+  }
+}
