@@ -51,8 +51,8 @@ Contributions are welcome! Here's how you can help:
 6. **Create a Pull Request**.
 
 ## 📜 License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This website is licensed under the [CC BY-ND 4.0 License](https://creativecommons.org/licenses/by-nd/4.0/).  
+You may use and share the site, but **modifications and redistributions are not allowed**.
 
 ---
 
