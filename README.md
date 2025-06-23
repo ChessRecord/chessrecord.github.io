@@ -51,8 +51,10 @@ Contributions are welcome! Here's how you can help:
 6. **Create a Pull Request**.
 
 ## 📜 License
-This website is licensed under the [CC BY-ND 4.0 License](https://creativecommons.org/licenses/by-nd/4.0/).  
-You may use and share the site, but **modifications and redistributions are not allowed**.
+This website is licensed under a **custom All Rights Reserved license**.  
+You may **view and use** the site for personal, non-commercial purposes, but  
+**modifications, redistributions, forks, or rehosting are strictly prohibited**.  
+Pull requests are welcome for suggestions only — accepted contributions become part of the project under this license.
 
 ---
 
