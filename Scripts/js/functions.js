@@ -559,7 +559,7 @@ function importJSON(event) {
             window.games = importedData;
             saveGames();
             displayGames();
-            alert("Games imported successfully!");
+            alert("Games replaced successfully!");
           } else if (e.target.id === "appendBtn") {
             importedData.forEach(game => game.id = generateUniqueID());
             window.games.push(...importedData);
