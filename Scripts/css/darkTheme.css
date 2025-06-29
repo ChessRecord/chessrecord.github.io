@@ -59,7 +59,7 @@ body.dark-theme {
 /* ========================= */
 .dark-theme .meta-bar {
   background-color: var(--black-2a);
-  border: 2px solid var(--grey-333);
+  border-top: 2px var(--grey-333) solid;
 }
 .dark-theme .meta-bar #game-count,
 .dark-theme .meta-bar #tournament-count {
