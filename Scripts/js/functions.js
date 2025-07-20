@@ -473,19 +473,20 @@ function importJSON(event) {
   const file = input.files[0];
   if (!file) return;
 
+  // 1. Normalizer stays the same
   const normalizeGame = (game, idx = 0) => ({
-    white: (game.white || "").trim(),
-    whiteRating: Number(game.whiteRating) || 0,
-    whiteTitle: (game.whiteTitle || "").trim(),
-    black: (game.black || "").trim(),
-    blackRating: Number(game.blackRating) || 0,
-    blackTitle: (game.blackTitle || "").trim(),
-    result: (game.result || "*").trim(),
-    tournament: (game.tournament || "").trim(),
-    round: Number(game.round) || idx + 1,
-    time: (game.time || "").trim(),
-    date: (game.date || "").replace(/\./g, "-"),
-    gameLink: (game.gameLink || "").trim()
+    white:     (game.white       || "").trim(),
+    whiteRating:(Number(game.whiteRating) || 0),
+    whiteTitle:(game.whiteTitle || "").trim(),
+    black:     (game.black       || "").trim(),
+    blackRating:(Number(game.blackRating) || 0),
+    blackTitle:(game.blackTitle || "").trim(),
+    result:    (game.result      || "*").trim(),
+    tournament:(game.tournament  || "").trim(),
+    round:     (Number(game.round)   || idx + 1),
+    time:      (game.time        || "").trim(),
+    date:      (game.date        || "").replace(/\./g, "-"),
+    gameLink:  (game.gameLink    || "").trim()
   });
 
   const reader = new FileReader();
@@ -493,33 +494,35 @@ function importJSON(event) {
     try {
       let importedData;
 
+      // 2. Parse PGN or JSON
       if (file.name.toLowerCase().endsWith(".pgn")) {
         importedData = pgnToJson(e.target.result);
       } else if (file.name.toLowerCase().endsWith(".json")) {
         const rawData = JSON.parse(e.target.result);
         if (!Array.isArray(rawData)) {
-          alert("Invalid file format! Make sure you're uploading a valid JSON or PGN file.");
+          alert("Invalid file format! Upload a valid JSON or PGN.");
           return;
         }
         importedData = rawData.map(normalizeGame);
       } else {
-        alert("Invalid file format! Please upload a valid JSON or PGN file.");
+        alert("Invalid file format! Upload a valid JSON or PGN.");
         return;
       }
 
+      // 3. Empty‑array guard
       if (isEmpty(importedData)) {
         alert("No games were found in this database");
         return;
       }
 
-      // Check for missing gameLink in any game
+      // 4. 🚀 Optimized missing‑link check
       if (importedData.some(game => !game.gameLink)) {
         alert("Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.");
         input.value = "";
         return;
       }
 
-      // ✅ If games list is empty, just replace directly
+      // 5. If no existing games, replace outright
       if (isEmpty(window.games)) {
         importedData.forEach(game => game.id = generateUniqueID());
         window.games = importedData;
@@ -530,17 +533,15 @@ function importJSON(event) {
         return;
       }
 
-      // 🔄 Show confirmation modal if there are already games
+      // 6. Otherwise, show replace/append modal
       const blur = document.getElementById("blur");
       if (blur) {
         const hideModal = () => {
-          blur.classList.remove("visible");
-          blur.classList.add("hidden");
+          blur.classList.replace("visible", "hidden");
           blur.innerHTML = "";
         };
 
-        blur.classList.remove("hidden");
-        blur.classList.add("visible");
+        blur.classList.replace("hidden", "visible");
         blur.innerHTML = `
           <div class="confirmation">
             <div class="cancel" id="cancelBtn" title="Cancel">&times;</div>
@@ -578,10 +579,10 @@ function importJSON(event) {
     } catch (error) {
       alert("Error parsing JSON or PGN file!");
       console.error(error);
+    } finally {
+      // 7. Always clear the input
+      input.value = "";
     }
-
-    // ✅ Always clear input no matter what
-    input.value = "";
   };
 
   reader.readAsText(file);
