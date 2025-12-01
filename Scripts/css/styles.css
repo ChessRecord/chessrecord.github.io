@@ -25,6 +25,7 @@ body {
 
 .fontawesome {
   font-family: "Poppins", "FontAwesome", sans-serif;
+  user-select: none;
 }
 
 /* Utility Classes */
