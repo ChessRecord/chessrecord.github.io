@@ -97,20 +97,32 @@
   padding: var(--small) calc(var(--small) / 2);
   z-index: 100;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.17);
-  display: none;
+  /* keep dropdown in-flow for transitions (avoid display:none) */
+  display: flex;
   flex-direction: column;
   opacity: 0;
   transform: translateY(-10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  /*
+    Transition visibility after opacity/transform when hiding.
+    visibility itself is not smoothly animatable, so we delay its change
+    until after opacity/transform complete to allow the fade-out to be seen.
+  */
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+  /* hidden by default to prevent interaction when closed */
+  visibility: hidden;
+  pointer-events: none;
   border: 2px var(--white-d) solid;
 }
 
 /* Dropdown States */
 .dropdown.show {
-  display: flex;
+  /* allow transitions to animate in/out by toggling visibility/opacity/transform */
+  visibility: visible;
+  pointer-events: auto;
   opacity: 1;
   transform: translateY(0);
-  animation: slideInSmall 0.1s ease-out;
+  /* ensure visibility change happens immediately when opening */
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0s;
 }
 
 .dropdown-item {
