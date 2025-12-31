@@ -463,7 +463,7 @@ function pgnToJson(pgn) {
       round: Number(getTag("Round").trim()) || idx + 1,
       time: getTag("TimeControl").trim(),
       date: getTag("Date") ? getTag("Date").replace(/\./g, "-") : "",
-      gameLink: getTag("ChapterURL")
+      gameLink: getTag("ChapterURL") || getTag("Site")
     };
   });
 }
