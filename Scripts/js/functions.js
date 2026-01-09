@@ -145,7 +145,6 @@ function refreshTitle() {
   });
 }
 
-
 function getTimeControlCategory(timeControl) {
   // Normalize input to handle various formats
   const parseTimeControl = (tc) => {
@@ -176,18 +175,18 @@ function getTimeControlCategory(timeControl) {
     // Convert everything to seconds for easier calculation
     const initialSeconds = initial * 60;
     const incrementSeconds = increment;
-    
+
     // Estimated total time in seconds for a 40-move game
-    const estimatedSeconds = initialSeconds + (incrementSeconds * 40);
-    
+    const estimatedSeconds = initialSeconds + incrementSeconds * 40;
+
     // Convert back to minutes for classification
     const estimatedMinutes = estimatedSeconds / 60;
-    
+
     // Bullet: Games expected to last less than 3 minutes
     if (initial < 3 && estimatedMinutes < 7) {
       return "Bullet";
     }
-    
+
     // Blitz: Games expected to last less than 10 minutes
     if (initial < 10 && estimatedMinutes < 25) {
       return "Blitz";
@@ -231,41 +230,46 @@ async function fetchPlayerNames(query) {
     clearTimeout(timeoutId); // Prevent timeout from firing after completion
 
     // Return only name and title data
-    return data.map(player => ({
+    return data.map((player) => ({
       name: formatName(player.name),
-      title: abbreviateTitle(player.title)
+      title: abbreviateTitle(player.title),
     }));
   } catch (error) {
     // Clear the timeout to prevent memory leaks
     clearTimeout(timeoutId);
-    
+
     // Log the error
-    console.error('Error fetching player names:', error);
-    
+    console.error("Error fetching player names:", error);
+
     // Return an empty array on failure
     return [];
   }
 }
 
 function highlightMatch(text, query) {
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "gi");
   return text.replace(regex, '<span style="font-weight: 700;">$1</span>');
 }
 
-function showSuggestions(titleElement, inputElement, suggestionsContainer, suggestions) {
+function showSuggestions(
+  titleElement,
+  inputElement,
+  suggestionsContainer,
+  suggestions,
+) {
   const query = inputElement.value.trim();
-  suggestionsContainer.innerHTML = '';
-  suggestions.forEach(player => {
-    const suggestionItem = document.createElement('div');
-    suggestionItem.classList.add('autocomplete-suggestion');
+  suggestionsContainer.innerHTML = "";
+  suggestions.forEach((player) => {
+    const suggestionItem = document.createElement("div");
+    suggestionItem.classList.add("autocomplete-suggestion");
     const highlightedName = highlightMatch(player.name, query);
-    const displayText = player.title 
+    const displayText = player.title
       ? `<span class="title">${player.title}</span> ${highlightedName}`
       : highlightedName;
     suggestionItem.innerHTML = displayText;
     suggestionItem.dataset.name = player.name;
-    suggestionItem.dataset.title = player.title || '';
+    suggestionItem.dataset.title = player.title || "";
     suggestionsContainer.appendChild(suggestionItem);
   });
 }
@@ -277,14 +281,19 @@ document.addEventListener("DOMContentLoaded", () => {
   if (playerWhite) {
     playerWhite.addEventListener("input", async function (e) {
       const query = e.target.value;
-      const whiteTitleElement = document.getElementById('whiteTitle');
-      const suggestionsContainer = document.getElementById('whiteSuggestions');
+      const whiteTitleElement = document.getElementById("whiteTitle");
+      const suggestionsContainer = document.getElementById("whiteSuggestions");
       if (query.length > 1) {
         const suggestions = await fetchPlayerNames(query);
-        showSuggestions(whiteTitleElement, e.target, suggestionsContainer, suggestions);
+        showSuggestions(
+          whiteTitleElement,
+          e.target,
+          suggestionsContainer,
+          suggestions,
+        );
       } else {
-        suggestionsContainer.innerHTML = '';
-        e.target.dataset.title = '';
+        suggestionsContainer.innerHTML = "";
+        e.target.dataset.title = "";
       }
     });
   }
@@ -292,72 +301,87 @@ document.addEventListener("DOMContentLoaded", () => {
   if (playerBlack) {
     playerBlack.addEventListener("input", async function (e) {
       const query = e.target.value;
-      const blackTitleElement = document.getElementById('blackTitle');
-      const suggestionsContainer = document.getElementById('blackSuggestions');
+      const blackTitleElement = document.getElementById("blackTitle");
+      const suggestionsContainer = document.getElementById("blackSuggestions");
       if (query.length > 1) {
         const suggestions = await fetchPlayerNames(query);
-        showSuggestions(blackTitleElement, e.target, suggestionsContainer, suggestions);
+        showSuggestions(
+          blackTitleElement,
+          e.target,
+          suggestionsContainer,
+          suggestions,
+        );
       } else {
-        suggestionsContainer.innerHTML = '';
-        e.target.dataset.title = '';
+        suggestionsContainer.innerHTML = "";
+        e.target.dataset.title = "";
       }
     });
   }
 
   // Event delegation for whiteSuggestions
-  const whiteSuggestions = document.getElementById('whiteSuggestions');
+  const whiteSuggestions = document.getElementById("whiteSuggestions");
   if (whiteSuggestions) {
-    whiteSuggestions.addEventListener('click', function(e) {
-      const suggestionItem = e.target.closest('.autocomplete-suggestion');
+    whiteSuggestions.addEventListener("click", function (e) {
+      const suggestionItem = e.target.closest(".autocomplete-suggestion");
       if (suggestionItem) {
-        const playerInput = document.getElementById('playerWhite');
-        const titleElement = document.getElementById('whiteTitle');
+        const playerInput = document.getElementById("playerWhite");
+        const titleElement = document.getElementById("whiteTitle");
         playerInput.value = suggestionItem.dataset.name;
         titleElement.value = suggestionItem.dataset.title;
         playerInput.dataset.title = suggestionItem.dataset.title;
-        this.innerHTML = '';
+        this.innerHTML = "";
       }
     });
   }
 
   // Event delegation for blackSuggestions
-  const blackSuggestions = document.getElementById('blackSuggestions');
+  const blackSuggestions = document.getElementById("blackSuggestions");
   if (blackSuggestions) {
-    blackSuggestions.addEventListener('click', function(e) {
-      const suggestionItem = e.target.closest('.autocomplete-suggestion');
+    blackSuggestions.addEventListener("click", function (e) {
+      const suggestionItem = e.target.closest(".autocomplete-suggestion");
       if (suggestionItem) {
-        const playerInput = document.getElementById('playerBlack');
-        const titleElement = document.getElementById('blackTitle');
+        const playerInput = document.getElementById("playerBlack");
+        const titleElement = document.getElementById("blackTitle");
         playerInput.value = suggestionItem.dataset.name;
         titleElement.value = suggestionItem.dataset.title;
         playerInput.dataset.title = suggestionItem.dataset.title;
-        this.innerHTML = '';
+        this.innerHTML = "";
       }
     });
   }
 });
 
 // Add Escape key functionality to close suggestions
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    document.getElementById('whiteSuggestions').innerHTML = '';
-    document.getElementById('blackSuggestions').innerHTML = '';
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    document.getElementById("whiteSuggestions").innerHTML = "";
+    document.getElementById("blackSuggestions").innerHTML = "";
   }
 });
 
 // Close suggestions when clicking outside
-document.addEventListener('click', function(e) {
-  const whiteSuggestions = document.getElementById('whiteSuggestions');
-  const blackSuggestions = document.getElementById('blackSuggestions');
-  const playerWhite = document.getElementById('playerWhite');
-  const playerBlack = document.getElementById('playerBlack');
+document.addEventListener("click", function (e) {
+  const whiteSuggestions = document.getElementById("whiteSuggestions");
+  const blackSuggestions = document.getElementById("blackSuggestions");
+  const playerWhite = document.getElementById("playerWhite");
+  const playerBlack = document.getElementById("playerBlack");
 
-  if (whiteSuggestions && playerWhite && !playerWhite.contains(e.target) && !whiteSuggestions.contains(e.target)) {
-    whiteSuggestions.innerHTML = '';
+  if (
+    whiteSuggestions &&
+    playerWhite &&
+    !playerWhite.contains(e.target) &&
+    !whiteSuggestions.contains(e.target)
+  ) {
+    whiteSuggestions.innerHTML = "";
   }
 
-  if (blackSuggestions && playerBlack && !playerBlack.contains(e.target) && !blackSuggestions.contains(e.target)) {
-    blackSuggestions.innerHTML = '';
+  if (
+    blackSuggestions &&
+    playerBlack &&
+    !playerBlack.contains(e.target) &&
+    !blackSuggestions.contains(e.target)
+  ) {
+    blackSuggestions.innerHTML = "";
   }
 });
 
@@ -400,7 +424,7 @@ function abbreviateTitle(title) {
 }
 
 function formatName(name) {
-  let parts = name.split(", ").map(part => part.trim());
+  let parts = name.split(", ").map((part) => part.trim());
   return parts.length === 2 ? `${parts[1]} ${parts[0]}` : name;
 }
 
@@ -415,11 +439,11 @@ function exportJSON() {
   }
 
   // Create a new array with the required modifications
-  const dataInitial = window.games.map(game => {
+  const dataInitial = window.games.map((game) => {
     const { id, ...rest } = game;
     return {
       ...rest,
-      result: normalizeResult(game.result)
+      result: normalizeResult(game.result),
     };
   });
 
@@ -459,11 +483,13 @@ function pgnToJson(pgn) {
       blackRating: Number(getTag("BlackElo")) || 0,
       blackTitle: getTag("BlackTitle").trim() || "",
       result: resultStr,
-      tournament: getTag("StudyName").trim() || getTag("Event").trim().split(":").slice(-1)[0],
+      tournament:
+        getTag("StudyName").trim() ||
+        getTag("Event").trim().split(":").slice(-1)[0],
       round: Number(getTag("Round").trim()) || idx + 1,
       time: getTag("TimeControl").trim(),
       date: getTag("Date") ? getTag("Date").replace(/\./g, "-") : "",
-      gameLink: getTag("ChapterURL") || getTag("Site")
+      gameLink: getTag("ChapterURL") || getTag("Site"),
     };
   });
 }
@@ -475,18 +501,18 @@ function importJSON(event) {
 
   // 1. Normalizer stays the same
   const normalizeGame = (game, idx = 0) => ({
-    white:     (game.white       || "").trim(),
-    whiteRating:(Number(game.whiteRating) || 0),
-    whiteTitle:(game.whiteTitle || "").trim(),
-    black:     (game.black       || "").trim(),
-    blackRating:(Number(game.blackRating) || 0),
-    blackTitle:(game.blackTitle || "").trim(),
-    result:    (game.result      || "*").trim(),
-    tournament:(game.tournament  || "").trim(),
-    round:     (Number(game.round)   || idx + 1),
-    time:      (game.time        || "").trim(),
-    date:      (game.date        || "").replace(/\./g, "-"),
-    gameLink:  (game.gameLink    || "").trim()
+    white: (game.white || "").trim(),
+    whiteRating: Number(game.whiteRating) || 0,
+    whiteTitle: (game.whiteTitle || "").trim(),
+    black: (game.black || "").trim(),
+    blackRating: Number(game.blackRating) || 0,
+    blackTitle: (game.blackTitle || "").trim(),
+    result: (game.result || "*").trim(),
+    tournament: (game.tournament || "").trim(),
+    round: Number(game.round) || idx + 1,
+    time: (game.time || "").trim(),
+    date: (game.date || "").replace(/\./g, "-"),
+    gameLink: (game.gameLink || "").trim(),
   });
 
   const reader = new FileReader();
@@ -516,15 +542,17 @@ function importJSON(event) {
       }
 
       // 4. 🚀 Optimized missing‑link check
-      if (importedData.some(game => !game.gameLink)) {
-        alert("Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.");
+      if (importedData.some((game) => !game.gameLink)) {
+        alert(
+          "Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.",
+        );
         input.value = "";
         return;
       }
 
       // 5. If no existing games, replace outright
       if (isEmpty(window.games)) {
-        importedData.forEach(game => game.id = generateUniqueID());
+        importedData.forEach((game) => (game.id = generateUniqueID()));
         window.games = importedData;
         saveGames();
         displayGames();
@@ -556,13 +584,13 @@ function importJSON(event) {
 
         const handler = function (e) {
           if (e.target.id === "replaceBtn") {
-            importedData.forEach(game => game.id = generateUniqueID());
+            importedData.forEach((game) => (game.id = generateUniqueID()));
             window.games = importedData;
             saveGames();
             displayGames();
             alert("Games replaced successfully!");
           } else if (e.target.id === "appendBtn") {
-            importedData.forEach(game => game.id = generateUniqueID());
+            importedData.forEach((game) => (game.id = generateUniqueID()));
             window.games.push(...importedData);
             saveGames();
             displayGames();
@@ -575,7 +603,6 @@ function importJSON(event) {
 
         blur.addEventListener("click", handler, { once: true });
       }
-
     } catch (error) {
       alert("Error parsing JSON or PGN file!");
       console.error(error);
@@ -593,11 +620,11 @@ function deleteGame(id) {
   let delete_confirmation = `Are you sure you want to delete:\n ${toUnicodeVariant(
     gameToDelete.whiteTitle,
     "bold sans",
-    "sans"
+    "sans",
   )} ${gameToDelete.white} vs ${toUnicodeVariant(
     gameToDelete.blackTitle,
     "bold sans",
-    "sans"
+    "sans",
   )} ${gameToDelete.black} ?`;
   if (confirm(delete_confirmation) == true) {
     window.games = window.games.filter((game) => game.id !== id);
@@ -615,10 +642,17 @@ function displayGames(searchTerm = "") {
   }
 
   const gameCount = window.games.length;
-  const tournamentCount = new Set(window.games.map(game => game.tournament)).size;
-  
-  gameCountElement.innerHTML = gameCount === 0 ? 'No Games' : `${gameCount} ${gameCount === 1 ? 'Game' : 'Games'}`;
-  tournamentCountElement.innerHTML = tournamentCount === 0 ? '' : `${tournamentCount} ${tournamentCount === 1 ? 'Tournament' : 'Tournaments'}`;
+  const tournamentCount = new Set(window.games.map((game) => game.tournament))
+    .size;
+
+  gameCountElement.innerHTML =
+    gameCount === 0
+      ? "No Games"
+      : `${gameCount} ${gameCount === 1 ? "Game" : "Games"}`;
+  tournamentCountElement.innerHTML =
+    tournamentCount === 0
+      ? ""
+      : `${tournamentCount} ${tournamentCount === 1 ? "Tournament" : "Tournaments"}`;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
@@ -627,7 +661,7 @@ function displayGames(searchTerm = "") {
       (game) =>
         game.white.toLowerCase().includes(normalizedSearchTerm) ||
         game.black.toLowerCase().includes(normalizedSearchTerm) ||
-        game.tournament.toLowerCase().includes(normalizedSearchTerm)
+        game.tournament.toLowerCase().includes(normalizedSearchTerm),
     )
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -641,15 +675,15 @@ function displayGames(searchTerm = "") {
   }, {});
 
   // Sort each tournament's games by round number
-  Object.values(gamesByTournament).forEach(gamesArr => {
+  Object.values(gamesByTournament).forEach((gamesArr) => {
     gamesArr.sort((a, b) => (a.round || 0) - (b.round || 0));
   });
 
   // Batch DOM updates using DocumentFragment
   const fragment = document.createDocumentFragment();
   Object.entries(gamesByTournament).forEach(([tournament, tournamentGames]) => {
-    const section = document.createElement('div');
-    section.className = 'tournament-section';
+    const section = document.createElement("div");
+    section.className = "tournament-section";
     section.innerHTML = `
       <div class="tournament-header">
         <h3>${tournament}</h3>
@@ -657,10 +691,10 @@ function displayGames(searchTerm = "") {
       </div>
     `;
     tournamentGames.forEach((game) => {
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = game.gameLink;
-      a.target = '_blank';
-      a.className = 'game-entry-link';
+      a.target = "_blank";
+      a.className = "game-entry-link";
       const category = getTimeControlCategory(game.time);
       a.innerHTML = `
         <div class="game-entry" data-game-id="${game.id}">
@@ -713,7 +747,7 @@ function displayGames(searchTerm = "") {
     });
     fragment.appendChild(section);
   });
-  gamesList.innerHTML = '';
+  gamesList.innerHTML = "";
   gamesList.appendChild(fragment);
 
   refreshTitle();
@@ -722,9 +756,7 @@ function displayGames(searchTerm = "") {
 function formatResult(result) {
   if (!result || typeof result !== "string") return "*";
 
-  const cleaned = result.trim()
-    .replace(/½/g, "1/2")
-    .replace(/\s+/g, "");
+  const cleaned = result.trim().replace(/½/g, "1/2").replace(/\s+/g, "");
 
   switch (cleaned) {
     case "1-0":
@@ -741,9 +773,10 @@ function formatResult(result) {
 function normalizeResult(result) {
   if (!result || typeof result !== "string") return "*";
 
-  const cleaned = result.trim()
-    .replace(/½/g, "1/2")        // Convert fancy fractions to plain
-    .replace(/\s+/g, "")         // Remove all whitespace
+  const cleaned = result
+    .trim()
+    .replace(/½/g, "1/2") // Convert fancy fractions to plain
+    .replace(/\s+/g, ""); // Remove all whitespace
 
   switch (cleaned) {
     case "1-0":
