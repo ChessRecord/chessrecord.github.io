@@ -652,7 +652,7 @@ function displayGames(searchTerm = "") {
   tournamentCountElement.innerHTML =
     tournamentCount === 0
       ? ""
-      : `${tournamentCount} ${tournamentCount === 1 ? "Tournament" : "Tournaments"}`;
+      : `${tournamentCount} ${tournamentCount === 1 ? "Event" : "Events"}`;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
