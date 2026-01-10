@@ -32,11 +32,11 @@ async function scrapeChessResults(url) {
   const keyMap = {
     "Rd.": "round",
     "Bo.": "boardNo",
-    "SNo": "playerStartNo",
-    "Title": "opponentTitle",
-    "Name": "opponentName",
-    "Rtg": "opponentRating",
-    "FED": "opponentFederation",
+    SNo: "playerStartNo",
+    Title: "opponentTitle",
+    Name: "opponentName",
+    Rtg: "opponentRating",
+    FED: "opponentFederation",
     "Club/City": "opponentClub",
     "Pts.": "opponentPoints",
     "Res.": "result",
@@ -44,20 +44,21 @@ async function scrapeChessResults(url) {
 
   // Helper to build opponent profile URL by replacing snr in the original url
   function buildOpponentProfileUrl(baseUrl, opponentStartNo) {
-    if (!baseUrl || !opponentStartNo || isNaN(Number(opponentStartNo))) return null;
+    if (!baseUrl || !opponentStartNo || isNaN(Number(opponentStartNo)))
+      return null;
     try {
       const urlObj = new URL(baseUrl);
-      urlObj.searchParams.set('snr', String(Number(opponentStartNo)));
+      urlObj.searchParams.set("snr", String(Number(opponentStartNo)));
       return urlObj.toString();
     } catch {
-      if (typeof baseUrl === 'string') {
+      if (typeof baseUrl === "string") {
         const snr = encodeURIComponent(String(Number(opponentStartNo)));
-        if (baseUrl.includes('snr=')) {
-          return baseUrl.replace(/([?&]snr=)[^&]*/, '$1' + snr);
-        } else if (baseUrl.includes('?')) {
-          return baseUrl + '&snr=' + snr;
+        if (baseUrl.includes("snr=")) {
+          return baseUrl.replace(/([?&]snr=)[^&]*/, "$1" + snr);
+        } else if (baseUrl.includes("?")) {
+          return baseUrl + "&snr=" + snr;
         } else {
-          return baseUrl + '?snr=' + snr;
+          return baseUrl + "?snr=" + snr;
         }
       }
       return null;
@@ -99,12 +100,15 @@ async function scrapeChessResults(url) {
           opponentPoints: rowObj["Pts."],
           result: rowObj["Res."],
           playerColor:
-            $(row).find("td:eq(" + (headerKeys.indexOf("Res.")) + ") div.FarbesT").length > 0
+            $(row).find("td:eq(" + headerKeys.indexOf("Res.") + ") div.FarbesT")
+              .length > 0
               ? "Black"
-              : $(row).find("td:eq(" + (headerKeys.indexOf("Res.")) + ") div.FarbewT").length > 0
-              ? "White"
-              : "",
-          opponentProfileUrl: buildOpponentProfileUrl(url, rowObj["SNo"])
+              : $(row).find(
+                    "td:eq(" + headerKeys.indexOf("Res.") + ") div.FarbewT",
+                  ).length > 0
+                ? "White"
+                : "",
+          opponentProfileUrl: buildOpponentProfileUrl(url, rowObj["SNo"]),
         };
 
         pairings.push(pairing);
@@ -172,7 +176,9 @@ async function getChessResults(url) {
       opponentRating: oppRating,
       opponentFederation: pairing.opponentFederation,
       opponentClub: pairing.opponentClub,
-      opponentPoints: pairing.opponentPoints.replace(/,5/g, "&#189;").replace(/0&#189;/g, "&#189;"),
+      opponentPoints: pairing.opponentPoints
+        .replace(/,5/g, "&#189;")
+        .replace(/0&#189;/g, "&#189;"),
       result: pairing.result,
       playerColor: pairing.playerColor,
       opponentProfileUrl: pairing.opponentProfileUrl,
@@ -208,23 +214,25 @@ async function getChessResults(url) {
 function renderPairingsTable(rounds, playerName, playerRating, url) {
   // Show player name and rating above the table
   if (playerName) {
-    if ($('#player-name').length === 0) {
-      $('#pairings-table').before('<div id="player-name"></div>');
+    if ($("#player-name").length === 0) {
+      $("#pairings-table").before('<div id="player-name"></div>');
     }
-    let displayHtml = '';
+    let displayHtml = "";
     if (url) {
       displayHtml += `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName}</strong></a>`;
     } else {
-      displayHtml += '<strong>' + playerName + '</strong>';
+      displayHtml += "<strong>" + playerName + "</strong>";
     }
     if (playerRating) {
-      displayHtml += ' <span class="player-rating">' + playerRating + '</span>';
+      displayHtml += ' <span class="player-rating">' + playerRating + "</span>";
     }
-    $('#player-name').html(displayHtml);
+    $("#player-name").html(displayHtml);
   }
   const $table = $("#pairings-table");
   // Check if any round has a federation value
-  const hasFederation = rounds.some(r => r.opponentFederation && r.opponentFederation.trim() !== "");
+  const hasFederation = rounds.some(
+    (r) => r.opponentFederation && r.opponentFederation.trim() !== "",
+  );
 
   // Build thead only once
   let tableHtml = `
@@ -283,7 +291,7 @@ function renderPairingsTable(rounds, playerName, playerRating, url) {
         ${hasFederation ? `<td>${round.opponentFederation || ""}</td>` : ""}
         <td>${round.opponentClub}</td>
         <td>${round.opponentPoints}</td>
-        <td class="result-cell">${colorSpan}${resultDisplay ? `<span>${resultDisplay}</span>` : ''}</td>
+        <td class="result-cell">${colorSpan}${resultDisplay ? `<span>${resultDisplay}</span>` : ""}</td>
       </tr>
     `;
   });
@@ -317,12 +325,26 @@ async function showPairingsTableFromInput() {
   showLoader("#searchURL span");
   try {
     const data = await getChessResults(url);
-    const playerRating = data.playerInfo && data.playerInfo["Rating international"] ? data.playerInfo["Rating international"] : null;
-    renderPairingsTable(data.rounds, data.playerInfo && data.playerInfo["Name"], playerRating, url); // pass url here
+    const playerRating =
+      data.playerInfo && data.playerInfo["Rating international"]
+        ? data.playerInfo["Rating international"]
+        : null;
+    renderPairingsTable(
+      data.rounds,
+      data.playerInfo && data.playerInfo["Name"],
+      playerRating,
+      url,
+    ); // pass url here
     // Cache rounds data in localStorage (also cache player name and rating)
     window.localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
-    window.localStorage.setItem("pairingsPlayerName", data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "");
-    window.localStorage.setItem("pairingsPlayerRating", playerRating ? playerRating : "");
+    window.localStorage.setItem(
+      "pairingsPlayerName",
+      data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "",
+    );
+    window.localStorage.setItem(
+      "pairingsPlayerRating",
+      playerRating ? playerRating : "",
+    );
     hideLoader("#searchURL span");
   } catch (err) {
     hideLoader("#searchURL span");
@@ -342,7 +364,9 @@ $(function () {
   // On page load, restore pairings table if cached
   const cachedRounds = window.localStorage.getItem("pairingsRounds");
   const cachedPlayerName = window.localStorage.getItem("pairingsPlayerName");
-  const cachedPlayerRating = window.localStorage.getItem("pairingsPlayerRating");
+  const cachedPlayerRating = window.localStorage.getItem(
+    "pairingsPlayerRating",
+  );
   const url = window.localStorage.getItem("chessResultsUrl"); // ensure url is available
   if (cachedRounds) {
     try {
