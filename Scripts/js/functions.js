@@ -830,10 +830,7 @@ function displayGames(searchTerm = "") {
       a.innerHTML = `
         <div class="game-entry" data-game-id="${game.id || "unknown"}">
           <div class="game-details" style="align-items: center;">
-            <div class="game-tournament">
-              <span class="game-round">${game.round || 1}</span>
-              <strong>Round ${game.round || 1}</strong>
-            </div>
+          <div class="game-tournament"><span class="game-round">${game.round}</span><strong>Round ${game.round}</strong></div>
             <span class="entry-meta">
               <span class="game-time">
                 ${timeIcon}
