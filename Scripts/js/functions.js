@@ -1,59 +1,3 @@
-/**
- * ==========================================
- * PERFORMANCE OPTIMIZATIONS APPLIED
- * ==========================================
- *
- * Optimization 1: toUnicodeVariant()
- * - Replaced duplicate loops with buildSpecialMap() helper function
- * - Improved getFlag() with .some() for better performance and type checking
- * - Added optional chaining (?.) for safer property access
- *
- * Optimization 2: capitalize()
- * - Replaced string concatenation loop (+=) with .join()
- * - Added type checking to prevent errors on non-string inputs
- * - Added .filter() to handle consecutive spaces
- *
- * Optimization 4: abbreviateTitle()
- * - Moved TITLE_MAP to module-level constant (created once, not on every call)
- * - Used Object.freeze() to prevent accidental mutations
- * - Added type checking for string validation
- * - Saves ~200+ object allocations per game display cycle
- *
- * Optimization 5: formatName()
- * - Replaced .map() with direct destructuring
- * - Added type checking and proper trimming
- * - Simpler logic with early returns
- *
- * Optimization 0: toNumberOr() helper
- * - Replaces repeated Math.max(0, Number(x) || 0) pattern
- * - Correctly handles edge cases like NaN and Infinity that || 0 misses
- * - Used in pgnToJson() and normalizeGame() for all rating/round fields
- * - Domain constraints (Math.max bounds) kept at call site for clarity
- *
- * Optimization 6: pgnToJson()
- * - Added input validation (type and null checks)
- * - Improved getTag() with optional chaining (?.) and nullish coalesce (??)
- * - Used .pop() instead of .slice(-1)[0]
- * - Added Math.max() for ensuring valid ratings and rounds
- * - Better fallback values for critical fields
- *
- * Optimization 7: exportJSON()
- * - Added Array.isArray() validation
- * - Validates each game object before processing
- * - Wrapped in try-catch for error handling
- * - Added date to backup filename for organization
- * - Single map+filter chain instead of intermediate variable
- *
- * Optimization 8: displayGames()
- * - Moved TIME_CONTROL_ICONS to module-level constant
- * - Replaced switch statement with object lookup (40% faster)
- * - Added game object validation
- * - Added fallback values for missing fields (id, round, names, ratings)
- * - Only adds target="_blank" if gameLink exists
- *
- * ==========================================
- */
-
 // Helper function to validate non-empty strings
 const isValidString = (s) => typeof s === "string" && s.length > 0;
 
@@ -350,12 +294,7 @@ function highlightMatch(text, query) {
   return text.replace(regex, '<span style="font-weight: 700;">$1</span>');
 }
 
-function showSuggestions(
-  titleElement,
-  inputElement,
-  suggestionsContainer,
-  suggestions,
-) {
+function showSuggestions(inputElement, suggestionsContainer, suggestions) {
   const query = inputElement.value.trim();
   suggestionsContainer.innerHTML = "";
   suggestions.forEach((player) => {
@@ -586,6 +525,7 @@ function pgnToJson(pgn) {
 
     const resultStr = getTag("Result").trim();
     const normalizedResult = resultStr === "1/2-1/2" ? "½-½" : resultStr;
+    const roundParts = getTag("Round").split(".");
 
     return {
       white: getTag("White").trim() || "Unknown",
@@ -598,7 +538,9 @@ function pgnToJson(pgn) {
       tournament:
         (getTag("StudyName") || getTag("Event")).trim().split(":").pop() ||
         "Unknown",
-      round: Math.max(1, toNumberOr(getTag("Round"), idx + 1)),
+      round: Math.max(1, toNumberOr(roundParts[0] || NaN, idx + 1)),
+      board:
+        toNumberOr(getTag("Board"), 0) || toNumberOr(roundParts[1], 0) || null,
       time: getTag("TimeControl").trim() || "*",
       date: getTag("Date")?.replace(/\./g, "-") || "",
       gameLink: getTag("ChapterURL") || getTag("Site") || "",
@@ -622,6 +564,7 @@ function importJSON(event) {
     result: (game.result || "*").trim(),
     tournament: (game.tournament || "").trim(),
     round: Math.max(1, toNumberOr(game.round, idx + 1)),
+    board: toNumberOr(game.board, 0) || null,
     time: (game.time || "").trim(),
     date: (game.date || "").replace(/\./g, "-"),
     gameLink: (game.gameLink || "").trim(),
@@ -787,9 +730,16 @@ function displayGames(searchTerm = "") {
     return acc;
   }, {});
 
-  // Sort each tournament's games by round number
+  // Sort each tournament's games by round number, then board number
   Object.values(gamesByTournament).forEach((gamesArr) => {
-    gamesArr.sort((a, b) => (a.round || 0) - (b.round || 0));
+    gamesArr.sort((a, b) => {
+      const roundDiff = (a.round || 0) - (b.round || 0);
+      if (roundDiff !== 0) return roundDiff;
+      if (a.board == null && b.board == null) return 0;
+      if (a.board == null) return -1;
+      if (b.board == null) return 1;
+      return a.board - b.board;
+    });
   });
 
   // Batch DOM updates using DocumentFragment
@@ -826,11 +776,13 @@ function displayGames(searchTerm = "") {
       }
 
       const dateString = game.date ? ` | <strong>${game.date}</strong>` : "";
+      const roundLabel =
+        game.board != null ? `Board ${game.board}` : `Round ${game.round}`;
 
       a.innerHTML = `
         <div class="game-entry" data-game-id="${game.id || "unknown"}">
           <div class="game-details" style="align-items: center;">
-          <div class="game-tournament"><span class="game-round">${game.round}</span><strong>Round ${game.round}</strong></div>
+          <div class="game-tournament"><span class="game-round">${game.round}</span><strong>${roundLabel}</strong></div>
             <span class="entry-meta">
               <span class="game-time">
                 ${timeIcon}

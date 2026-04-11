@@ -114,7 +114,7 @@ select:focus {
 
 textarea:focus::placeholder,
 input:focus::placeholder {
-    color: transparent;
+    color: var(--white-d);
 }
 
 textarea {

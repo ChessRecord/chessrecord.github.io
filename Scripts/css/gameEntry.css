@@ -15,7 +15,7 @@
     background-color: var(--white-container);
     padding: var(--small) 25px;
     border-radius: 8px;
-    border: 2px var(--white-d) solid;
+    border: 1.5px var(--white-d) solid;
     margin-bottom: 15px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
