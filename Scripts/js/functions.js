@@ -689,7 +689,7 @@ function deleteGame(id) {
   }
 }
 
-function displayGames(searchTerm = "") {
+function displayGames(searchTerm = window.currentSearchTerm || "") {
   const gamesList = document.getElementById("gamesList");
   if (!gamesList) return;
 
