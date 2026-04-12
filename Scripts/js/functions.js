@@ -689,7 +689,7 @@ function deleteGame(id) {
   }
 }
 
-function displayGames(searchTerm = window.currentSearchTerm || "") {
+function displayGames(searchTerm = window.searchTerm || "") {
   const gamesList = document.getElementById("gamesList");
   if (!gamesList) return;
 
@@ -733,7 +733,7 @@ function displayGames(searchTerm = window.currentSearchTerm || "") {
   // Sort each tournament's games by round number, then board number
   Object.values(gamesByTournament).forEach((gamesArr) => {
     gamesArr.sort((a, b) => {
-      const roundDiff = (a.round || 0) - (b.round || 0);
+      const roundDiff = (a.round ?? 0) - (b.round ?? 0);
       if (roundDiff !== 0) return roundDiff;
       if (a.board == null && b.board == null) return 0;
       if (a.board == null) return -1;
