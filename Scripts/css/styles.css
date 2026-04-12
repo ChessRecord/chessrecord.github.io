@@ -41,31 +41,6 @@ body {
     gap: calc(var(--medium) / 2);
 }
 
-.blur {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    z-index: 999;
-    opacity: 0;
-    pointer-events: none;
-    user-select: none;
-    transition: opacity 0.3s ease;
-}
-
-.blur.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.blur.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
 /* Container Styles */
 .container {
     background-color: var(--white-container);
@@ -174,54 +149,6 @@ button.outline {
     width: 105px !important;
 }
 
-/* Confirmation Modal */
-.confirmation {
-    position: fixed;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: var(--medium);
-    top: 50%;
-    left: 50%;
-    width: 30vw;
-    height: fit-content;
-    background-color: var(--white-container);
-    border-radius: var(--border-radius);
-    padding: var(--normal);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
-    border: 2px var(--white-d) solid;
-    z-index: 1000;
-    animation: slideInAbsolute 0.3s ease-out;
-    text-align: center;
-    transform: translate(-50%, -50%);
-}
-
-.confirmation i.warning-big {
-    font-size: 5rem;
-    color: var(--orange);
-}
-
-.confirmation .options {
-    width: 100%;
-    display: flex;
-    gap: var(--small);
-}
-
-.confirmation .options button {
-    width: 100%;
-    flex-grow: 1;
-}
-
-.confirmation .cancel {
-    top: 0;
-    right: 0;
-    position: absolute;
-    transform: translate(-100%, 10%);
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
 /* Loader */
 .loader {
     width: var(--normal);
@@ -303,18 +230,6 @@ span.gap {
 }
 
 /* Animations */
-@keyframes slideInAbsolute {
-    from {
-        opacity: 0;
-        /* Start at center, but slightly lower for smoothness */
-        transform: translate(-50%, calc(-50% + 20px));
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-}
-
 @keyframes slideIn {
     from {
         opacity: 0;

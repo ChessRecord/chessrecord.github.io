@@ -548,12 +548,15 @@ function pgnToJson(pgn) {
   });
 }
 
-function importJSON(event) {
+// ─── Updated importJSON() — replace the inline modal block with Modal.confirm()
+// Only the relevant section (step 6 onward) is shown; everything above is unchanged.
+
+// Make importJSON async so we can await Modal.confirm()
+async function importJSON(event) {
   const input = event.target;
   const file = input.files[0];
   if (!file) return;
 
-  // 1. Normalizer stays the same
   const normalizeGame = (game, idx = 0) => ({
     white: (game.white || "").trim(),
     whiteRating: Math.max(0, toNumberOr(game.whiteRating, 0)),
@@ -571,7 +574,8 @@ function importJSON(event) {
   });
 
   const reader = new FileReader();
-  reader.onload = function (e) {
+
+  reader.onload = async function (e) {
     try {
       let importedData;
 
@@ -581,88 +585,92 @@ function importJSON(event) {
       } else if (file.name.toLowerCase().endsWith(".json")) {
         const rawData = JSON.parse(e.target.result);
         if (!Array.isArray(rawData)) {
-          alert("Invalid file format! Upload a valid JSON or PGN.");
+          await Modal.alert({
+            icon: "fa-solid fa-circle-xmark modal-icon-danger",
+            title: "Invalid file format!",
+            body: "Please upload a valid JSON or PGN file.",
+          });
           return;
         }
         importedData = rawData.map(normalizeGame);
       } else {
-        alert("Invalid file format! Upload a valid JSON or PGN.");
+        await Modal.alert({
+          icon: "fa-solid fa-circle-xmark modal-icon-danger",
+          title: "Unsupported file type",
+          body: "Please upload a valid JSON or PGN file.",
+        });
         return;
       }
 
-      // 3. Empty‑array guard
+      // 3. Empty-array guard
       if (isEmpty(importedData)) {
-        alert("No games were found in this database");
+        await Modal.alert({
+          icon: "fa-solid fa-circle-info modal-icon-info",
+          title: "No games found",
+          body: "No games were found in this database.",
+        });
         return;
       }
 
-      // 4. 🚀 Optimized missing‑link check
+      // 4. Missing-link check
       if (importedData.some((game) => !game.gameLink)) {
-        alert(
-          "Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.",
-        );
-        input.value = "";
+        await Modal.alert({
+          icon: "fa-solid fa-circle-xmark modal-icon-danger",
+          title: "Import failed",
+          body: "Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.",
+        });
         return;
       }
 
-      // 5. If no existing games, replace outright
+      // 5. No existing games → replace outright
       if (isEmpty(window.games)) {
         importedData.forEach((game) => (game.id = generateUniqueID()));
         window.games = importedData;
         saveGames();
         displayGames();
-        alert("Games imported successfully!");
-        input.value = "";
+        await Modal.alert({
+          icon: "fa-solid fa-circle-check modal-icon-success",
+          title: "Games imported successfully!",
+        });
         return;
       }
 
-      // 6. Otherwise, show replace/append modal
-      const blur = document.getElementById("blur");
-      if (blur) {
-        const hideModal = () => {
-          blur.classList.replace("visible", "hidden");
-          blur.innerHTML = "";
-        };
+      // 6. Existing games → ask Replace or Append
+      const choice = await Modal.confirm({
+        icon: "fa-solid fa-triangle-exclamation warning-big",
+        title: "Do you want to replace or append your games?",
+        cancel: { id: "replaceBtn", label: "Replace", classes: "btn outline" },
+        confirm: { id: "appendBtn", label: "Append", classes: "btn" },
+      });
 
-        blur.classList.replace("hidden", "visible");
-        blur.innerHTML = `
-          <div class="confirmation">
-            <div class="cancel" id="cancelBtn" title="Cancel">&times;</div>
-            <i class="fa-solid fa-triangle-exclamation warning-big"></i>
-            <h3>Do you want to replace or append your games?</h3>
-            <div class="options">
-              <button class="btn outline" id="replaceBtn">Replace</button>
-              <button class="btn" id="appendBtn">Append</button>
-            </div>
-          </div>
-        `;
-
-        const handler = function (e) {
-          if (e.target.id === "replaceBtn") {
-            importedData.forEach((game) => (game.id = generateUniqueID()));
-            window.games = importedData;
-            saveGames();
-            displayGames();
-            alert("Games replaced successfully!");
-          } else if (e.target.id === "appendBtn") {
-            importedData.forEach((game) => (game.id = generateUniqueID()));
-            window.games.push(...importedData);
-            saveGames();
-            displayGames();
-            alert("Games appended successfully!");
-          }
-          // Always close — handles Replace, Append, Cancel, and backdrop clicks
-          hideModal();
-          input.value = "";
-        };
-
-        blur.addEventListener("click", handler, { once: true });
+      if (choice === "replaceBtn") {
+        importedData.forEach((game) => (game.id = generateUniqueID()));
+        window.games = importedData;
+        saveGames();
+        displayGames();
+        await Modal.alert({
+          icon: "fa-solid fa-circle-check modal-icon-success",
+          title: "Games replaced successfully!",
+        });
+      } else if (choice === "appendBtn") {
+        importedData.forEach((game) => (game.id = generateUniqueID()));
+        window.games.push(...importedData);
+        saveGames();
+        displayGames();
+        await Modal.alert({
+          icon: "fa-solid fa-circle-check modal-icon-success",
+          title: "Games appended successfully!",
+        });
       }
+      // choice === null  →  user dismissed, do nothing
     } catch (error) {
-      alert("Error parsing JSON or PGN file!");
+      await Modal.alert({
+        icon: "fa-solid fa-circle-xmark modal-icon-danger",
+        title: "Error",
+        body: "Error parsing JSON or PGN file!",
+      });
       console.error(error);
     } finally {
-      // 7. Always clear the input
       input.value = "";
     }
   };
