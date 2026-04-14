@@ -1,118 +1,40 @@
-/**
- * modal.js — Centralised modal system
- *
- * Usage:
- *   const result = await Modal.confirm({ ... });
- *   Modal.alert({ ... });
- *   Modal.hide();
- *
- * Replaces the inline modal code previously embedded in importJSON().
- * Requires: modal.css, Font Awesome (for icons).
- */
+// modal.js
 
 const Modal = (() => {
-  // ─── Internals ────────────────────────────────────────────────────────────
-
-  /** Lazily create (or reuse) the #blur backdrop element. */
   function getBackdrop() {
-    let backdrop = document.getElementById("blur");
-    if (!backdrop) {
-      backdrop = document.createElement("div");
-      backdrop.id = "blur";
-      backdrop.className = "blur hidden";
-      document.body.appendChild(backdrop);
+    let el = document.getElementById("blur");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "blur";
+      el.className = "blur hidden";
+      document.body.appendChild(el);
     }
-    return backdrop;
+    return el;
   }
 
-  /** Show the backdrop and inject dialog HTML into it. */
-  function mount(html) {
-    const backdrop = getBackdrop();
-    backdrop.innerHTML = html;
-    backdrop.classList.replace("hidden", "visible");
-    return backdrop;
-  }
-
-  /** Hide the backdrop and clear its contents. */
-  function hide() {
-    const backdrop = getBackdrop();
-    backdrop.classList.replace("visible", "hidden");
-    backdrop.innerHTML = "";
-  }
-
-  /**
-   * Core builder — renders a modal and resolves a Promise with the button id
-   * that was clicked (or null for cancel / Escape / backdrop).
-   *
-   * @param {Object} opts
-   * @param {string}   [opts.icon]     Font Awesome classes, e.g. "fa-solid fa-triangle-exclamation warning-big"
-   * @param {string}   [opts.title]    Heading text
-   * @param {string}   [opts.body]     Optional paragraph text below the heading
-   * @param {Array}    opts.buttons    Array of { id, label, classes } descriptors
-   * @returns {Promise<string|null>}   Resolves with the clicked button id, or null on dismiss
-   */
-  function open({ icon = "", title = "", body = "", buttons = [] }) {
+  // Accepts raw HTML string. Resolves with the data-modal-action value, or null on dismiss.
+  function open(html) {
     return new Promise((resolve) => {
-      const iconHtml = icon ? `<i class="${icon}"></i>` : "";
+      const backdrop = getBackdrop();
+      backdrop.innerHTML = html;
+      backdrop.classList.replace("hidden", "visible");
 
-      const bodyHtml = body ? `<p>${body}</p>` : "";
-
-      const buttonsHtml = buttons
-        .map(
-          ({ id, label, classes = "btn" }) =>
-            `<button class="${classes}" id="${id}">${label}</button>`,
-        )
-        .join("");
-
-      const html = `
-        <div class="confirmation" role="dialog" aria-modal="true" aria-label="${title}">
-          <div class="cancel" id="modalCancelBtn" title="Close">&times;</div>
-          ${iconHtml}
-          ${title ? `<h3>${title}</h3>` : ""}
-          ${bodyHtml}
-          <div class="options">${buttonsHtml}</div>
-        </div>
-      `;
-
-      const backdrop = mount(html);
-
-      // ── Focus trap: put focus inside the dialog ──────────────────────────
-      const dialog = backdrop.querySelector(".confirmation");
-      const firstFocusable = dialog.querySelector("button");
-      firstFocusable?.focus();
-
-      // ── Resolve helper ───────────────────────────────────────────────────
       const finish = (value) => {
         backdrop.removeEventListener("click", onClick);
         document.removeEventListener("keydown", onKeydown);
-        hide();
+        backdrop.classList.replace("visible", "hidden");
+        backdrop.innerHTML = "";
         resolve(value);
       };
 
-      // ── Click handler (event delegation) ────────────────────────────────
       const onClick = (e) => {
-        // Dismiss on bare backdrop click
-        if (e.target === backdrop) {
-          finish(null);
-          return;
-        }
-
-        const el = e.target.closest("[id]");
-        if (!el) return;
-
-        if (el.id === "modalCancelBtn") {
-          finish(null);
-        } else {
-          finish(el.id);
-        }
+        if (e.target === backdrop) { finish(null); return; }
+        const el = e.target.closest("[data-modal-action]");
+        if (el) finish(el.dataset.modalAction === "cancel" ? null : el.dataset.modalAction);
       };
 
-      // ── Keyboard handler ─────────────────────────────────────────────────
       const onKeydown = (e) => {
-        if (e.key === "Escape") {
-          e.preventDefault();
-          finish(null);
-        }
+        if (e.key === "Escape") { e.preventDefault(); finish(null); }
       };
 
       backdrop.addEventListener("click", onClick);
@@ -120,74 +42,64 @@ const Modal = (() => {
     });
   }
 
-  // ─── Public API ───────────────────────────────────────────────────────────
-
-  /**
-   * Show a two-action confirmation dialog.
-   * Returns a Promise that resolves to the clicked button id or null.
-   *
-   * Common use-case (replaces the inline modal from importJSON):
-   *
-   *   const choice = await Modal.confirm({
-   *     icon:    "fa-solid fa-triangle-exclamation warning-big",
-   *     title:   "Do you want to replace or append your games?",
-   *     confirm: { id: "appendBtn",  label: "Append"  },
-   *     cancel:  { id: "replaceBtn", label: "Replace", classes: "btn outline" },
-   *   });
-   *
-   *   if (choice === "appendBtn")  { ... }
-   *   if (choice === "replaceBtn") { ... }
-   *   if (choice === null)         { /* dismissed *\/ }
-   */
-  function confirm({
-    icon = "fa-solid fa-triangle-exclamation warning-big",
-    title = "Are you sure?",
-    body = "",
-    confirm: confirmBtn = {
-      id: "confirmBtn",
-      label: "Confirm",
-      classes: "btn",
-    },
-    cancel: cancelBtn = {
-      id: "cancelActionBtn",
-      label: "Cancel",
-      classes: "btn outline",
-    },
-  } = {}) {
-    return open({
-      icon,
-      title,
-      body,
-      buttons: [cancelBtn, confirmBtn],
-    });
+  // Built-in confirmation dialog helper.
+  // buttons: Array of { action, label, classes }
+  function confirm({ icon = "", title = "", buttons = [] } = {}) {
+    const iconHtml = icon ? `<i class="${icon}"></i>` : "";
+    const buttonsHtml = buttons
+      .map(({ action, label, classes = "btn" }) =>
+        `<button class="${classes}" data-modal-action="${action}">${label}</button>`)
+      .join("");
+    return open(`
+      <div class="confirmation">
+        <div class="cancel" data-modal-action="cancel" title="Cancel">&times;</div>
+        ${iconHtml}
+        ${title ? `<h3>${title}</h3>` : ""}
+        <div class="options">${buttonsHtml}</div>
+      </div>`);
   }
 
-  /**
-   * Show an informational alert with a single dismiss button.
-   * Returns a Promise that resolves when dismissed.
-   *
-   *   await Modal.alert({ title: "Done!", body: "Games imported successfully." });
-   */
-  function alert({
-    icon = "fa-solid fa-circle-info",
-    title = "",
-    body = "",
-    okLabel = "OK",
-  } = {}) {
-    return open({
-      icon,
-      title,
-      body,
-      buttons: [{ id: "modalOkBtn", label: okLabel, classes: "btn" }],
-    });
+  function hide() {
+    const backdrop = getBackdrop();
+    backdrop.classList.replace("visible", "hidden");
+    backdrop.innerHTML = "";
   }
 
-  /**
-   * Programmatically close any open modal.
-   */
-  function hideModal() {
-    hide();
+  return { open, confirm, hide };
+})();
+
+
+const Toast = (() => {
+  const DURATION = 4000;
+
+  function getContainer() {
+    let el = document.getElementById("toastContainer");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "toastContainer";
+      document.body.appendChild(el);
+    }
+    return el;
   }
 
-  return { confirm, alert, hide: hideModal, _open: open };
+  function show(message, duration = DURATION) {
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.innerHTML = `
+      <span>${message}</span>
+      <button class="toast-dismiss" aria-label="Dismiss">&times;</button>
+      <div class="toast-progress" style="animation-duration:${duration}ms"></div>`;
+
+    const dismiss = () => {
+      clearTimeout(timer);
+      toast.classList.add("toast-out");
+      toast.addEventListener("animationend", () => toast.remove(), { once: true });
+    };
+
+    toast.querySelector(".toast-dismiss").addEventListener("click", dismiss);
+    const timer = setTimeout(dismiss, duration);
+    getContainer().appendChild(toast);
+  }
+
+  return { show };
 })();

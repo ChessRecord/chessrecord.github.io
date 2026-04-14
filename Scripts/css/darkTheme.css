@@ -179,3 +179,20 @@ body.dark-theme {
     color: var(--white-e0);
     border: 2px solid var(--grey-333);
 }
+
+.dark-theme .toast {
+    background-color: var(--black-2a);
+    border: 1.5px solid var(--grey-333);
+    box-shadow:
+        5px 5px 10px #1e1e1e,
+        -5px -5px 10px #272626;
+    color: var(--white-e0);
+}
+
+.dark-theme button.toast-dismiss {
+    color: var(--white-e0);
+}
+
+.dark-theme .toast:hover {
+    background-color: var(--black-2c);
+}

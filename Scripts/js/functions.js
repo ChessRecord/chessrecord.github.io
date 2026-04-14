@@ -549,10 +549,7 @@ function pgnToJson(pgn) {
 }
 
 // ─── Updated importJSON() — replace the inline modal block with Modal.confirm()
-// Only the relevant section (step 6 onward) is shown; everything above is unchanged.
-
-// Make importJSON async so we can await Modal.confirm()
-async function importJSON(event) {
+function importJSON(event) {
   const input = event.target;
   const file = input.files[0];
   if (!file) return;
@@ -574,7 +571,6 @@ async function importJSON(event) {
   });
 
   const reader = new FileReader();
-
   reader.onload = async function (e) {
     try {
       let importedData;
@@ -585,90 +581,66 @@ async function importJSON(event) {
       } else if (file.name.toLowerCase().endsWith(".json")) {
         const rawData = JSON.parse(e.target.result);
         if (!Array.isArray(rawData)) {
-          await Modal.alert({
-            icon: "fa-solid fa-circle-xmark modal-icon-danger",
-            title: "Invalid file format!",
-            body: "Please upload a valid JSON or PGN file.",
-          });
+          alert("Invalid file format! Upload a valid JSON or PGN.");
           return;
         }
         importedData = rawData.map(normalizeGame);
       } else {
-        await Modal.alert({
-          icon: "fa-solid fa-circle-xmark modal-icon-danger",
-          title: "Unsupported file type",
-          body: "Please upload a valid JSON or PGN file.",
-        });
+        alert("Invalid file format! Upload a valid JSON or PGN.");
         return;
       }
 
       // 3. Empty-array guard
       if (isEmpty(importedData)) {
-        await Modal.alert({
-          icon: "fa-solid fa-circle-info modal-icon-info",
-          title: "No games found",
-          body: "No games were found in this database.",
-        });
+        alert("No games were found in this database");
         return;
       }
 
       // 4. Missing-link check
       if (importedData.some((game) => !game.gameLink)) {
-        await Modal.alert({
-          icon: "fa-solid fa-circle-xmark modal-icon-danger",
-          title: "Import failed",
-          body: "Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.",
-        });
+        alert(
+          "Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.",
+        );
+        input.value = "";
         return;
       }
 
-      // 5. No existing games → replace outright
+      // 5. If no existing games, replace outright
       if (isEmpty(window.games)) {
         importedData.forEach((game) => (game.id = generateUniqueID()));
         window.games = importedData;
         saveGames();
         displayGames();
-        await Modal.alert({
-          icon: "fa-solid fa-circle-check modal-icon-success",
-          title: "Games imported successfully!",
-        });
+        Toast.show("Games imported successfully!");
+        input.value = "";
         return;
       }
 
-      // 6. Existing games → ask Replace or Append
+      // 6. Otherwise, show replace/append modal
       const choice = await Modal.confirm({
         icon: "fa-solid fa-triangle-exclamation warning-big",
         title: "Do you want to replace or append your games?",
-        cancel: { id: "replaceBtn", label: "Replace", classes: "btn outline" },
-        confirm: { id: "appendBtn", label: "Append", classes: "btn" },
+        buttons: [
+          { action: "replace", label: "Replace", classes: "btn outline" },
+          { action: "append", label: "Append", classes: "btn" },
+        ],
       });
 
-      if (choice === "replaceBtn") {
+      if (choice === "replace") {
         importedData.forEach((game) => (game.id = generateUniqueID()));
         window.games = importedData;
         saveGames();
         displayGames();
-        await Modal.alert({
-          icon: "fa-solid fa-circle-check modal-icon-success",
-          title: "Games replaced successfully!",
-        });
-      } else if (choice === "appendBtn") {
+        Toast.show("Games replaced successfully!");
+      } else if (choice === "append") {
         importedData.forEach((game) => (game.id = generateUniqueID()));
         window.games.push(...importedData);
         saveGames();
         displayGames();
-        await Modal.alert({
-          icon: "fa-solid fa-circle-check modal-icon-success",
-          title: "Games appended successfully!",
-        });
+        Toast.show("Games appended successfully!");
       }
-      // choice === null  →  user dismissed, do nothing
     } catch (error) {
-      await Modal.alert({
-        icon: "fa-solid fa-circle-xmark modal-icon-danger",
-        title: "Error",
-        body: "Error parsing JSON or PGN file!",
-      });
+      alert("Error parsing JSON or PGN file!");
       console.error(error);
     } finally {
       input.value = "";
