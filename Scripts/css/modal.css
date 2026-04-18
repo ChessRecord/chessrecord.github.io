@@ -106,8 +106,9 @@
     background-color: var(--white-container);
     border-radius: 8px;
     border: 1.5px var(--white-d) solid;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     font-size: var(--small);
+    font-weight: 400;
     min-width: 200px;
     max-width: 300px;
     pointer-events: all;
