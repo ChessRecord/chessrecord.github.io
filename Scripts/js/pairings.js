@@ -1,13 +1,3 @@
-function expectedScore(myRating, oppRating) {
-  return 1 / (1 + Math.pow(10, (oppRating - myRating) / 400));
-}
-
-function calcChange(myRating, oppRating, result, k = 40) {
-  if (oppRating === 0) return "";
-  const E = expectedScore(myRating, oppRating);
-  return Math.round(k * (result - E) * 10) / 10;
-}
-
 async function scrapeChessResults(url) {
   const proxy = "https://proxy.caticuchess.workers.dev/";
   const fullUrl = proxy + url;

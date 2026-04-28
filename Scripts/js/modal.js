@@ -28,13 +28,22 @@ const Modal = (() => {
       };
 
       const onClick = (e) => {
-        if (e.target === backdrop) { finish(null); return; }
+        if (e.target === backdrop) {
+          finish(null);
+          return;
+        }
         const el = e.target.closest("[data-modal-action]");
-        if (el) finish(el.dataset.modalAction === "cancel" ? null : el.dataset.modalAction);
+        if (el)
+          finish(
+            el.dataset.modalAction === "cancel" ? null : el.dataset.modalAction,
+          );
       };
 
       const onKeydown = (e) => {
-        if (e.key === "Escape") { e.preventDefault(); finish(null); }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          finish(null);
+        }
       };
 
       backdrop.addEventListener("click", onClick);
@@ -47,8 +56,10 @@ const Modal = (() => {
   function confirm({ icon = "", title = "", buttons = [] } = {}) {
     const iconHtml = icon ? `<i class="${icon}"></i>` : "";
     const buttonsHtml = buttons
-      .map(({ action, label, classes = "btn" }) =>
-        `<button class="${classes}" data-modal-action="${action}">${label}</button>`)
+      .map(
+        ({ action, label, classes = "btn" }) =>
+          `<button class="${classes}" data-modal-action="${action}">${label}</button>`,
+      )
       .join("");
     return open(`
       <div class="confirmation">
@@ -66,40 +77,4 @@ const Modal = (() => {
   }
 
   return { open, confirm, hide };
-})();
-
-
-const Toast = (() => {
-  const DURATION = 4000;
-
-  function getContainer() {
-    let el = document.getElementById("toastContainer");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "toastContainer";
-      document.body.appendChild(el);
-    }
-    return el;
-  }
-
-  function show(message, duration = DURATION) {
-    const toast = document.createElement("div");
-    toast.className = "toast";
-    toast.innerHTML = `
-      <span>${message}</span>
-      <button class="toast-dismiss" aria-label="Dismiss">&times;</button>
-      <div class="toast-progress" style="animation-duration:${duration}ms"></div>`;
-
-    const dismiss = () => {
-      clearTimeout(timer);
-      toast.classList.add("toast-out");
-      toast.addEventListener("animationend", () => toast.remove(), { once: true });
-    };
-
-    toast.querySelector(".toast-dismiss").addEventListener("click", dismiss);
-    const timer = setTimeout(dismiss, duration);
-    getContainer().appendChild(toast);
-  }
-
-  return { show };
 })();

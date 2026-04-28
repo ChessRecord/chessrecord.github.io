@@ -1,34 +1,28 @@
-// Attach games to the global window object
+// script.js - FIDE page controller
+
+/* --- Initialization --- */
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
-window.addEventListener("load", () => {
-  const gameForm = document.getElementById("gameForm");
-  if (gameForm) {
-    gameForm.addEventListener("submit", addGame);
-  }
-});
-
-/*API REQUEST INFO*/
 const LOADER_CONFIG = {
   TIMEOUT_MS: 5000,
-  API_URL: 'https://lichess.org/api/fide/player/',
+  API_URL: "https://lichess.org/api/fide/player/",
 };
-/*API REQUEST */
+
+/* --- API Requests --- */
 async function fide_api(FIDE) {
   if (!FIDE || isNaN(FIDE)) return ["N/A", ""];
-
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), LOADER_CONFIG.TIMEOUT_MS);
-
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    LOADER_CONFIG.TIMEOUT_MS,
+  );
   try {
     const apiUrl = `${LOADER_CONFIG.API_URL}${FIDE}`;
     const response = await fetch(apiUrl, { signal: controller.signal });
-
-    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-
+    if (!response.ok)
+      throw new Error(`API request failed with status ${response.status}`);
     const data = await response.json();
-    clearTimeout(timeoutId); // Prevent timeout from firing after completion
-
+    clearTimeout(timeoutId);
     return [
       data.name || "N/A",
       data.title || "",
@@ -42,8 +36,9 @@ async function fide_api(FIDE) {
   }
 }
 
+/* --- Form Submission --- */
 async function addGame(event) {
-  event.preventDefault(); // Prevent form submission
+  event.preventDefault();
   showLoader("#addGame span");
 
   const whiteFIDE = parseInt(document.getElementById("whiteFIDE").value.trim());
@@ -56,7 +51,6 @@ async function addGame(event) {
   }
 
   const result = document.getElementById("result").value;
-
   if (result === "0") {
     alert("Please select a result!");
     hideLoader("#addGame span");
@@ -64,8 +58,10 @@ async function addGame(event) {
   }
 
   try {
-    let [playerWhite, whiteTitle, whiteStandard, whiteRapid, whiteBlitz] = await fide_api(whiteFIDE);
-    let [playerBlack, blackTitle, blackStandard, blackRapid, blackBlitz] = await fide_api(blackFIDE);
+    let [playerWhite, whiteTitle, whiteStandard, whiteRapid, whiteBlitz] =
+      await fide_api(whiteFIDE);
+    let [playerBlack, blackTitle, blackStandard, blackRapid, blackBlitz] =
+      await fide_api(blackFIDE);
 
     if (playerWhite === "N/A" && playerBlack === "N/A") {
       hideLoader("#addGame span");
@@ -85,14 +81,12 @@ async function addGame(event) {
 
     whiteTitle = abbreviateTitle(whiteTitle);
     blackTitle = abbreviateTitle(blackTitle);
-
     playerWhite = formatName(capitalize(playerWhite));
     playerBlack = formatName(capitalize(playerBlack));
 
     const time = document.getElementById("time").value || "";
-
-    let whiteRating = 0;
-    let blackRating = 0;
+    let whiteRating = 0,
+      blackRating = 0;
 
     if (getTimeControlCategory(time) === "Classical") {
       whiteRating = whiteStandard;
@@ -110,7 +104,7 @@ async function addGame(event) {
 
     const tournament = document.getElementById("tournament").value;
     const round = parseInt(document.getElementById("round").value) || 1;
-    const date = document.getElementById("date").value
+    const date = document.getElementById("date").value;
 
     const game = {
       id: generateUniqueID(),
@@ -128,37 +122,39 @@ async function addGame(event) {
       gameLink: document.getElementById("gameLink").value,
     };
 
-  // 🚀 **Add duplicate check here BEFORE pushing to games**
-  if (window.games.some(g => 
-    (g.white === playerWhite || g.black === playerBlack) && 
-    g.date === date && 
-    g.tournament === tournament && 
-    g.round === round)) {
-    hideLoader("#addGame span");
-    alert("Game already exists or player conflict in this round!");
-    return;
-  }
+    if (
+      window.games.some(
+        (g) =>
+          (g.white === playerWhite || g.black === playerBlack) &&
+          g.date === date &&
+          g.tournament === tournament &&
+          g.round === round,
+      )
+    ) {
+      hideLoader("#addGame span");
+      alert("Game already exists or player conflict in this round!");
+      return;
+    }
+
     window.games.push(game);
     saveGames();
     event.target.reset();
-
     hideLoader("#addGame span");
 
     alert(
-      `${toUnicodeVariant(
-        game.whiteTitle,
-        "bold sans",
-        "sans"
-      )} ${playerWhite} vs ${toUnicodeVariant(
-        game.blackTitle,
-        "bold sans",
-        "sans"
-      )} ${playerBlack} Game Added!`
+      `${toUnicodeVariant(game.whiteTitle, "bold sans", "sans")} ${playerWhite} vs ${toUnicodeVariant(game.blackTitle, "bold sans", "sans")} ${playerBlack} Game Added!`,
     );
   } catch (error) {
-    console.error("Error fetching FIDE data:", error);
+    console.error("Error adding game:", error);
     hideLoader("#addGame span");
     alert("Error fetching FIDE data. Please try again.");
-    return; // Ensure the function exits on API error
   }
 }
+
+/* --- Event Listeners --- */
+document.addEventListener("DOMContentLoaded", () => {
+  const gameForm = document.getElementById("gameForm");
+  if (gameForm) {
+    gameForm.addEventListener("submit", addGame);
+  }
+});

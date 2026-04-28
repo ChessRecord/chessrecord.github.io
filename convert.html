@@ -1,40 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="description"
-      content="ChessRecord - Log and Store Your Chess Games"
-    />
-    <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChessRecord - PGN to Database Converter</title>
-    <link rel="icon" type="image/x-icon" href="Scripts/knight.png" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="Scripts/css/styles.css" />
-    <link rel="stylesheet" href="Scripts/css/responsive.css" />
-    <link rel="stylesheet" href="Scripts/css/customSelect.css" />
-    <link rel="stylesheet" href="Scripts/css/gameEntry.css" />
-    <link rel="stylesheet" href="Scripts/css/darkTheme.css" />
-  </head>
-  <body>
-    <div class="container">
-      <h1>PGN to Database Converter</h1>
-      <form id="PGN-Form" onsubmit="return false;">
-        <div style="display: flex; flex-direction: column; gap: 20px; min-height: 60vh;">
-          <textarea id="PGN" placeholder="Enter PGN"></textarea>
-          <button type="submit">
-            <span>Download JSON</span>
-            <div class="loader" id="loader"></div>
-          </button>
-          <pre id="JSON" style="flex: 1 1 auto; min-height: 200px;"></pre>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="description"
+            content="ChessRecord - Log and Store Your Chess Games"
+        />
+        <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ChessRecord - PGN to Database Converter</title>
+        <link rel="icon" type="image/x-icon" href="Scripts/knight.png" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+            integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+        <link rel="stylesheet" href="Scripts/css/styles.css" />
+        <link rel="stylesheet" href="Scripts/css/responsive.css" />
+        <link rel="stylesheet" href="Scripts/css/customSelect.css" />
+        <link rel="stylesheet" href="Scripts/css/gameEntry.css" />
+        <link rel="stylesheet" href="Scripts/css/darkTheme.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>PGN to Database Converter</h1>
+            <form id="PGN-Form" onsubmit="return false;">
+                <div
+                    style="
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                        min-height: 60vh;
+                    "
+                >
+                    <textarea id="PGN" placeholder="Enter PGN"></textarea>
+                    <button type="submit">
+                        <span>Download JSON</span>
+                        <div class="loader" id="loader"></div>
+                    </button>
+                    <pre
+                        id="JSON"
+                        style="flex: 1 1 auto; min-height: 200px"
+                    ></pre>
+                </div>
+            </form>
         </div>
-      </form>
-    </div>
-    <script src="Scripts/js/functions.js"></script>
-    <script src="Scripts/js/convert.js"></script>
-    <script src="Scripts/js/customSelect.js"></script>
-    <script src="Scripts/js/darkTheme.js"></script>
-    <script src="Scripts/js/dropdown.js"></script>
-  </body>
+
+        <!-- Global Utilities & UI -->
+        <script src="Scripts/js/utils.js"></script>
+        <script src="Scripts/js/ui.js"></script>
+        <script src="Scripts/js/darkTheme.js"></script>
+
+        <!-- Feature Logic -->
+        <script src="Scripts/js/functions.js"></script>
+        <script src="Scripts/js/customSelect.js"></script>
+
+        <!-- Page Controller -->
+        <script src="Scripts/js/convert.js"></script>
+    </body>
 </html>
