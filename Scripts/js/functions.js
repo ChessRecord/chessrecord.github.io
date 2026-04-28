@@ -126,8 +126,7 @@ function pgnToJson(pgn) {
 
 function importJSON(event) {
   const input = event.target;
-  const file = input.files[0];
-  if (!file) return;
+  if (!input.files || input.files.length === 0) return;
 
   const normalizeGame = (game, idx = 0) => ({
     white: (game.white || "").trim(),
@@ -145,37 +144,18 @@ function importJSON(event) {
     gameLink: (game.gameLink || "").trim(),
   });
 
-  const reader = new FileReader();
-  reader.onload = async function (e) {
+  const finalize = async (importedData) => {
     try {
-      let importedData;
-      if (file.name.toLowerCase().endsWith(".pgn")) {
-        importedData = pgnToJson(e.target.result);
-      } else if (file.name.toLowerCase().endsWith(".json")) {
-        const rawData = JSON.parse(e.target.result);
-        if (!Array.isArray(rawData)) {
-          alert("Invalid file format! Upload a valid JSON or PGN.");
-          return;
-        }
-        importedData = rawData.map(normalizeGame);
-      } else {
-        alert("Invalid file format! Upload a valid JSON or PGN.");
-        return;
-      }
-
       if (isEmpty(importedData)) {
         alert("No games were found in this database");
         return;
       }
-
       if (importedData.some((game) => !game.gameLink)) {
         alert(
           "Import failed: Some games are missing a game link (URL). Please ensure every game includes a valid link before importing.",
         );
-        input.value = "";
         return;
       }
-
       if (isEmpty(window.games)) {
         importedData.forEach((game) => (game.id = generateUniqueID()));
         window.games = importedData;
@@ -211,7 +191,46 @@ function importJSON(event) {
       input.value = "";
     }
   };
-  reader.readAsText(file);
+
+  const readNext = (index, accumulated) => {
+    if (index === input.files.length) {
+      finalize(accumulated);
+      return;
+    }
+    const file = input.files[index];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        let parsed;
+        if (file.name.toLowerCase().endsWith(".pgn")) {
+          parsed = pgnToJson(e.target.result);
+        } else if (file.name.toLowerCase().endsWith(".json")) {
+          const rawData = JSON.parse(e.target.result);
+          if (!Array.isArray(rawData)) {
+            alert("Invalid file format! Upload a valid JSON or PGN.");
+            input.value = "";
+            return;
+          }
+          parsed = rawData.map(normalizeGame);
+        } else {
+          alert("Invalid file format! Upload a valid JSON or PGN.");
+          input.value = "";
+          return;
+        }
+        readNext(index + 1, accumulated.concat(parsed));
+      } catch (error) {
+        alert("Error parsing JSON or PGN file!");
+        input.value = "";
+      }
+    };
+    reader.onerror = () => {
+      alert("Error parsing JSON or PGN file!");
+      input.value = "";
+    };
+    reader.readAsText(file);
+  };
+
+  readNext(0, []);
 }
 
 /* --- Rendering Logic --- */
