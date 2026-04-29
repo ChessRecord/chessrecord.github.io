@@ -1,4 +1,4 @@
-// manualScript.js - Custom page controller
+// custom.js - Custom page controller
 
 /* --- Initialization --- */
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];

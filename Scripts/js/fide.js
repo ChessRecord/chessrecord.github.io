@@ -1,4 +1,4 @@
-// script.js - FIDE page controller
+// fide.js - FIDE page controller
 
 /* --- Initialization --- */
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
