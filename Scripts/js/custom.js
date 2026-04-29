@@ -1,185 +1,181 @@
-// custom.js - Custom page controller
+// custom.js — Custom page controller
 
-/* --- Initialization --- */
+/* ─── Initialization ─────────────────────────────────────────────────────── */
+
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
-/* --- Autocomplete Functions --- */
-async function fetchPlayerNames(query) {
+const FIDE_SEARCH_API = "https://lichess.org/api/fide/player";
+
+/* ─── Autocomplete ───────────────────────────────────────────────────────── */
+
+async function fetchPlayerSuggestions(query) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const apiUrl = `https://lichess.org/api/fide/player?q=${encodeURIComponent(query.trim())}`;
-    const response = await fetch(apiUrl, { signal: controller.signal });
-    if (!response.ok)
-      throw new Error(`API request failed with status ${response.status}`);
-    const data = await response.json();
-    clearTimeout(timeoutId);
-    return data.map((player) => ({
-      name: formatName(player.name),
-      title: abbreviateTitle(player.title),
+    const res = await fetch(
+      `${FIDE_SEARCH_API}?q=${encodeURIComponent(query.trim())}`,
+      { signal: controller.signal },
+    );
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+    return data.map((p) => ({
+      name: formatName(p.name),
+      title: abbreviateTitle(p.title),
     }));
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error("Error fetching player names:", error);
+  } catch (err) {
+    console.error("Error fetching player suggestions:", err);
     return [];
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 function highlightMatch(text, query) {
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escapedQuery})`, "gi");
-  return text.replace(regex, '<span style="font-weight: 700;">$1</span>');
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.replace(
+    new RegExp(`(${escaped})`, "gi"),
+    '<span style="font-weight:700">$1</span>',
+  );
 }
 
-function showSuggestions(inputElement, suggestionsContainer, suggestions) {
-  const query = inputElement.value.trim();
-  suggestionsContainer.innerHTML = "";
-  suggestions.forEach((player) => {
-    const suggestionItem = document.createElement("div");
-    suggestionItem.classList.add("autocomplete-suggestion");
-    const highlightedName = highlightMatch(player.name, query);
-    const displayText = player.title
-      ? `<span class="title">${player.title}</span> ${highlightedName}`
-      : highlightedName;
-    suggestionItem.innerHTML = displayText;
-    suggestionItem.dataset.name = player.name;
-    suggestionItem.dataset.title = player.title || "";
-    suggestionsContainer.appendChild(suggestionItem);
+function renderSuggestions(input, container, suggestions) {
+  const query = input.value.trim();
+  container.innerHTML = "";
+  suggestions.forEach(({ name, title }) => {
+    const item = document.createElement("div");
+    item.className = "autocomplete-suggestion";
+    item.innerHTML = `${title ? `<span class="title">${title}</span> ` : ""}${highlightMatch(name, query)}`;
+    item.dataset.name = name;
+    item.dataset.title = title || "";
+    container.appendChild(item);
   });
 }
 
-/* --- Form Submission --- */
+function setupAutocomplete(inputId, containerId, titleId) {
+  const input = document.getElementById(inputId);
+  const container = document.getElementById(containerId);
+  const titleInput = document.getElementById(titleId);
+  if (!input || !container || !titleInput) return;
+
+  input.addEventListener("input", async ({ target }) => {
+    const query = target.value.trim();
+    if (query.length > 1) {
+      renderSuggestions(input, container, await fetchPlayerSuggestions(query));
+    } else {
+      container.innerHTML = "";
+    }
+  });
+
+  container.addEventListener("click", ({ target }) => {
+    const item = target.closest(".autocomplete-suggestion");
+    if (!item) return;
+    input.value = item.dataset.name;
+    titleInput.value = item.dataset.title;
+    container.innerHTML = "";
+  });
+}
+
+/* ─── Player & Game Helpers ──────────────────────────────────────────────── */
+
+function resolvePlayers() {
+  const field = (id) => document.getElementById(id);
+  const makePlayer = (nameId, titleId, ratingId) => ({
+    name: formatName(capitalize(field(nameId).value)),
+    title: abbreviateTitle(field(titleId).value.toUpperCase()),
+    rating: parseInt(field(ratingId).value) || 0,
+  });
+  return {
+    white: makePlayer("playerWhite", "whiteTitle", "whiteRating"),
+    black: makePlayer("playerBlack", "blackTitle", "blackRating"),
+  };
+}
+
+function collectFormData() {
+  return {
+    result: document.getElementById("result").value,
+    time: document.getElementById("time").value || "",
+    tournament: document.getElementById("tournament").value,
+    round: parseInt(document.getElementById("round").value) || 1,
+    date: document.getElementById("date").value,
+    gameLink: document.getElementById("gameLink").value,
+  };
+}
+
+function buildGame(
+  white,
+  black,
+  { result, time, tournament, round, date, gameLink },
+) {
+  return {
+    id: generateUniqueID(),
+    white: white.name,
+    whiteRating: white.rating,
+    whiteTitle: white.title,
+    black: black.name,
+    blackRating: black.rating,
+    blackTitle: black.title,
+    result,
+    tournament,
+    round: Number(round),
+    time,
+    date,
+    gameLink,
+  };
+}
+
+function isDuplicate({ white, black, date, tournament, round }) {
+  return window.games.some(
+    (g) =>
+      (g.white === white || g.black === black) &&
+      g.date === date &&
+      g.tournament === tournament &&
+      g.round === round,
+  );
+}
+
+function gameAddedAlert({ whiteTitle, white, blackTitle, black }) {
+  const fmt = (title, name) =>
+    `${toUnicodeVariant(title, "bold sans", "sans")} ${name}`;
+  alert(`${fmt(whiteTitle, white)} vs ${fmt(blackTitle, black)} Game Added!`);
+}
+
+/* ─── Form Submission ────────────────────────────────────────────────────── */
+
 async function addGame(event) {
   event.preventDefault();
   showLoader("#addGame span");
 
-  const result = document.getElementById("result").value;
-  if (result === "0") {
-    alert("Please select a result!");
+  try {
+    const formData = collectFormData();
+    if (formData.result === "0") return alert("Please select a result!");
+
+    const { white, black } = resolvePlayers();
+    const game = buildGame(white, black, formData);
+
+    if (isDuplicate(game)) {
+      return alert("Game already exists or player conflict in this round!");
+    }
+
+    window.games.push(game);
+    saveGames();
+    event.target.reset();
+    gameAddedAlert(game);
+  } finally {
     hideLoader("#addGame span");
-    return;
   }
-
-  const playerWhite = formatName(
-    capitalize(document.getElementById("playerWhite").value),
-  );
-  const playerBlack = formatName(
-    capitalize(document.getElementById("playerBlack").value),
-  );
-  const whiteRating =
-    parseInt(document.getElementById("whiteRating").value) || 0;
-  const blackRating =
-    parseInt(document.getElementById("blackRating").value) || 0;
-  const time = document.getElementById("time").value || "";
-  const tournament = document.getElementById("tournament").value;
-  const round = parseInt(document.getElementById("round").value) || 1;
-  const date = document.getElementById("date").value;
-
-  const game = {
-    id: generateUniqueID(),
-    white: playerWhite,
-    whiteRating: Number(whiteRating),
-    whiteTitle: abbreviateTitle(
-      document.getElementById("whiteTitle").value.toUpperCase(),
-    ),
-    black: playerBlack,
-    blackRating: Number(blackRating),
-    blackTitle: abbreviateTitle(
-      document.getElementById("blackTitle").value.toUpperCase(),
-    ),
-    result: result,
-    tournament: tournament,
-    round: Number(round),
-    time: time,
-    date: date,
-    gameLink: document.getElementById("gameLink").value,
-  };
-
-  if (
-    window.games.some(
-      (g) =>
-        (g.white === playerWhite || g.black === playerBlack) &&
-        g.date === date &&
-        g.tournament === tournament &&
-        g.round === round,
-    )
-  ) {
-    hideLoader("#addGame span");
-    alert("Game already exists or player conflict in this round!");
-    return;
-  }
-
-  window.games.push(game);
-  saveGames();
-  event.target.reset();
-  hideLoader("#addGame span");
-
-  alert(
-    `${toUnicodeVariant(game.whiteTitle, "bold sans", "sans")} ${playerWhite} vs ${toUnicodeVariant(game.blackTitle, "bold sans", "sans")} ${playerBlack} Game Added!`,
-  );
 }
 
-/* --- Event Listeners & Autocomplete --- */
+/* ─── Initialization ─────────────────────────────────────────────────────── */
+
 document.addEventListener("DOMContentLoaded", () => {
-  const gameForm = document.getElementById("gameForm");
-  if (gameForm) {
-    gameForm.addEventListener("submit", addGame);
-  }
-
-  const playerWhite = document.getElementById("playerWhite");
-  const playerBlack = document.getElementById("playerBlack");
-
-  if (playerWhite) {
-    playerWhite.addEventListener("input", async function (e) {
-      const query = e.target.value;
-      const suggestionsContainer = document.getElementById("whiteSuggestions");
-      if (query.length > 1) {
-        const suggestions = await fetchPlayerNames(query);
-        showSuggestions(e.target, suggestionsContainer, suggestions);
-      } else {
-        suggestionsContainer.innerHTML = "";
-      }
-    });
-  }
-
-  if (playerBlack) {
-    playerBlack.addEventListener("input", async function (e) {
-      const query = e.target.value;
-      const suggestionsContainer = document.getElementById("blackSuggestions");
-      if (query.length > 1) {
-        const suggestions = await fetchPlayerNames(query);
-        showSuggestions(e.target, suggestionsContainer, suggestions);
-      } else {
-        suggestionsContainer.innerHTML = "";
-      }
-    });
-  }
-
-  /* --- Suggestion Selection --- */
-  document.addEventListener("click", (e) => {
-    const suggestionItem = e.target.closest(".autocomplete-suggestion");
-    if (suggestionItem) {
-      const container = suggestionItem.closest(".autocomplete-suggestions");
-      const isWhite = container.id === "whiteSuggestions";
-      const playerInput = document.getElementById(
-        isWhite ? "playerWhite" : "playerBlack",
-      );
-      const titleElement = document.getElementById(
-        isWhite ? "whiteTitle" : "blackTitle",
-      );
-      playerInput.value = suggestionItem.dataset.name;
-      titleElement.value = suggestionItem.dataset.title;
-      container.innerHTML = "";
-    }
-  });
+  document.getElementById("gameForm")?.addEventListener("submit", addGame);
+  setupAutocomplete("playerWhite", "whiteSuggestions", "whiteTitle");
+  setupAutocomplete("playerBlack", "blackSuggestions", "blackTitle");
 });
 
-/* --- Global Listeners --- */
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    const w = document.getElementById("whiteSuggestions");
-    const b = document.getElementById("blackSuggestions");
-    if (w) w.innerHTML = "";
-    if (b) b.innerHTML = "";
-  }
+document.addEventListener("keydown", ({ key }) => {
+  if (key !== "Escape") return;
+  ["whiteSuggestions", "blackSuggestions"].forEach((id) => {
+    document.getElementById(id)?.replaceChildren();
+  });
 });
