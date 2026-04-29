@@ -160,29 +160,6 @@ button.outline {
     display: none;
 }
 
-/* Notification */
-.notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    padding: calc(var(--small) / 2) var(--small);
-    border-radius: calc(var(--border-radius) / 1.5);
-    font-size: var(--small);
-    /*animation: slideOutSmallAbsolute 0.3s ease-out;*/
-}
-
-.notification.good {
-    background-color: var(--good);
-    color: var(--white-container);
-}
-
-.notification.bad {
-    background-color: var(--bad);
-    color: var(--white-container);
-}
-
 /* Navigation & Misc */
 a.redirect {
     position: fixed;
