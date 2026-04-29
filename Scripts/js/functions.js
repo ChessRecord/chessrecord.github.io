@@ -1,5 +1,3 @@
-// functions.js - Feature-specific logic (Import/Export, Rendering, Autocomplete)
-
 function saveGames() {
   localStorage.setItem("chessGames", JSON.stringify(window.games));
 }
@@ -12,51 +10,6 @@ function refreshTitle() {
     } else {
       titleElement.style.display = "";
     }
-  });
-}
-
-/* --- Autocomplete Functions --- */
-async function fetchPlayerNames(query) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-  try {
-    const apiUrl = `https://lichess.org/api/fide/player?q=${encodeURIComponent(query.trim())}`;
-    const response = await fetch(apiUrl, { signal: controller.signal });
-    if (!response.ok)
-      throw new Error(`API request failed with status ${response.status}`);
-    const data = await response.json();
-    clearTimeout(timeoutId);
-    return data.map((player) => ({
-      name: formatName(player.name),
-      title: abbreviateTitle(player.title),
-    }));
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error("Error fetching player names:", error);
-    return [];
-  }
-}
-
-function highlightMatch(text, query) {
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escapedQuery})`, "gi");
-  return text.replace(regex, '<span style="font-weight: 700;">$1</span>');
-}
-
-function showSuggestions(inputElement, suggestionsContainer, suggestions) {
-  const query = inputElement.value.trim();
-  suggestionsContainer.innerHTML = "";
-  suggestions.forEach((player) => {
-    const suggestionItem = document.createElement("div");
-    suggestionItem.classList.add("autocomplete-suggestion");
-    const highlightedName = highlightMatch(player.name, query);
-    const displayText = player.title
-      ? `<span class="title">${player.title}</span> ${highlightedName}`
-      : highlightedName;
-    suggestionItem.innerHTML = displayText;
-    suggestionItem.dataset.name = player.name;
-    suggestionItem.dataset.title = player.title || "";
-    suggestionsContainer.appendChild(suggestionItem);
   });
 }
 
@@ -83,7 +36,7 @@ function exportJSON() {
     const blob = new Blob([jsonData], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ChessGamesBackup_${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `ChessRecord_${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
   } catch (error) {
