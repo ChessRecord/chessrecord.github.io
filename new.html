@@ -9,7 +9,7 @@
         <meta name="keywords" content="chess, games, tracker, FIDE, ratings" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>ChessRecord</title>
-        <link rel="icon" type="image/x-icon" href="../Scripts/knight.png" />
+        <link rel="icon" type="image/x-icon" href="Scripts/knight.png" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
@@ -17,11 +17,11 @@
             crossorigin="anonymous"
             referrerpolicy="no-referrer"
         />
-        <link rel="stylesheet" href="../Scripts/css/styles.css" />
-        <link rel="stylesheet" href="../Scripts/css/responsive.css" />
-        <link rel="stylesheet" href="../Scripts/css/customSelect.css" />
-        <link rel="stylesheet" href="../Scripts/css/gameEntry.css" />
-        <link rel="stylesheet" href="../Scripts/css/darkTheme.css" />
+        <link rel="stylesheet" href="Scripts/css/styles.css" />
+        <link rel="stylesheet" href="Scripts/css/responsive.css" />
+        <link rel="stylesheet" href="Scripts/css/customSelect.css" />
+        <link rel="stylesheet" href="Scripts/css/gameEntry.css" />
+        <link rel="stylesheet" href="Scripts/css/darkTheme.css" />
     </head>
     <body>
         <div class="container">
@@ -29,13 +29,25 @@
             <form id="gameForm" onsubmit="return false;">
                 <div class="inlineForm">
                     <input
-                        type="number"
-                        id="whiteFIDE"
-                        class="flex"
-                        placeholder="White Player FIDE ID"
-                        required
-                        title="Please enter a valid FIDE ID"
+                        type="text"
+                        id="whiteTitle"
+                        class="titleInput"
+                        placeholder="Title"
                     />
+                    <div class="autocomplete-container">
+                        <input
+                            type="text"
+                            id="playerWhite"
+                            class="flex"
+                            placeholder="White Player Name or FIDE ID"
+                            autocomplete="off"
+                            required
+                        />
+                        <div
+                            id="whiteSuggestions"
+                            class="autocomplete-suggestions"
+                        ></div>
+                    </div>
                     <input
                         type="number"
                         min="1400"
@@ -47,13 +59,25 @@
                 </div>
                 <div class="inlineForm">
                     <input
-                        type="number"
-                        id="blackFIDE"
-                        class="flex"
-                        placeholder="Black Player FIDE ID"
-                        required
-                        title="Please enter a valid FIDE ID"
+                        type="text"
+                        id="blackTitle"
+                        class="titleInput"
+                        placeholder="Title"
                     />
+                    <div class="autocomplete-container">
+                        <input
+                            type="text"
+                            id="playerBlack"
+                            class="flex"
+                            placeholder="Black Player Name or FIDE ID"
+                            autocomplete="off"
+                            required
+                        />
+                        <div
+                            id="blackSuggestions"
+                            class="autocomplete-suggestions"
+                        ></div>
+                    </div>
                     <input
                         type="number"
                         min="1400"
@@ -121,21 +145,16 @@
                 </button>
             </form>
         </div>
-        <a href="./custom" class="redirect tooltip">
-            <i class="fa-solid fa-rocket"></i>
-            <span class="tooltiptext">Use Player Names For Input</span>
-        </a>
-
         <!-- Global Utilities & UI -->
-        <script src="../Scripts/js/utils.js"></script>
-        <script src="../Scripts/js/ui.js"></script>
-        <script src="../Scripts/js/darkTheme.js"></script>
+        <script src="Scripts/js/utils.js"></script>
+        <script src="Scripts/js/ui.js"></script>
+        <script src="Scripts/js/darkTheme.js"></script>
 
         <!-- Feature Logic -->
-        <script src="../Scripts/js/functions.js"></script>
-        <script src="../Scripts/js/customSelect.js"></script>
+        <script src="Scripts/js/functions.js"></script>
+        <script src="Scripts/js/customSelect.js"></script>
 
         <!-- Page Controller -->
-        <script src="../Scripts/js/fide.js"></script>
+        <script src="Scripts/js/new.js"></script>
     </body>
 </html>
