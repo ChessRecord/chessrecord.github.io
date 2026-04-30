@@ -84,5 +84,5 @@ export const initCustomSelect = () => {
   document.addEventListener("click", closeAllSelect);
 };
 
-// Auto-init if desired, or can be called from main controller
-document.addEventListener("DOMContentLoaded", initCustomSelect);
+// Auto-init for modules (deferred by default)
+initCustomSelect();

@@ -2,9 +2,11 @@
 import { isEmpty } from "./utils.js";
 import { pgnToJson } from "./api.js";
 
-window.addEventListener("DOMContentLoaded", function () {
+const initConvert = () => {
   const form = document.getElementById("PGN-Form");
   const textarea = document.getElementById("PGN");
+
+  if (!form || !textarea) return;
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -39,4 +41,7 @@ window.addEventListener("DOMContentLoaded", function () {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
   });
-});
+};
+
+// Run initialization immediately
+initConvert();

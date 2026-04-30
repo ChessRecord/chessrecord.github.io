@@ -1,4 +1,5 @@
 // utils.js - General utility functions and Chess logic
+// This file is now a "Dumb" utility library with zero application state.
 
 export const isValidString = (s) => typeof s === "string" && s.length > 0;
 

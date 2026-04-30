@@ -6,11 +6,9 @@ import {
   generateUniqueID,
   toNumberOr,
   isValidString,
+  normalizeResult,
 } from "./utils.js";
-
-export function saveGames() {
-  localStorage.setItem("chessGames", JSON.stringify(window.games));
-}
+import { saveGames } from "./games.js";
 
 export function pgnToJson(pgn) {
   if (!isValidString(pgn)) return [];
@@ -21,7 +19,7 @@ export function pgnToJson(pgn) {
       return match?.[1] ?? "";
     };
     const resultStr = getTag("Result").trim();
-    const normalizedResult = resultStr === "1/2-1/2" ? "½-½" : resultStr;
+    const normalizedResultValue = resultStr === "1/2-1/2" ? "½-½" : resultStr;
     const roundParts = getTag("Round").split(".");
     return {
       white: getTag("White").trim() || "Unknown",
@@ -30,7 +28,7 @@ export function pgnToJson(pgn) {
       black: getTag("Black").trim() || "Unknown",
       blackRating: Math.max(0, toNumberOr(getTag("BlackElo"), 0)),
       blackTitle: getTag("BlackTitle").trim() || "",
-      result: normalizedResult,
+      result: normalizedResultValue,
       tournament:
         (getTag("StudyName") || getTag("Event")).trim().split(":").pop() ||
         "Unknown",
@@ -72,19 +70,6 @@ export function exportJSON() {
   } catch (error) {
     console.error("Export failed:", error);
     alert("Failed to export games. Please try again.");
-  }
-}
-
-function normalizeResult(result) {
-  if (!isValidString(result)) return "*";
-  const cleaned = result.trim().replace(/½/g, "1/2").replace(/\s+/g, "");
-  switch (cleaned) {
-    case "1-0":
-    case "0-1":
-    case "1/2-1/2":
-      return cleaned;
-    default:
-      return "*";
   }
 }
 
@@ -200,3 +185,4 @@ export function importJSON(event) {
 // Attach to window for HTML onclick compatibility
 window.exportJSON = exportJSON;
 window.importJSON = importJSON;
+window.saveGames = saveGames;

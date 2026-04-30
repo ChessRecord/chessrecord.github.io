@@ -3,9 +3,7 @@ import {
   getTimeControlCategory,
   TIME_CONTROL_ICONS,
   formatResult,
-  toUnicodeVariant,
 } from "./utils.js";
-import { saveGames } from "./api.js";
 
 /* --- Dropdown Logic --- */
 export const hideDropdown = () => {
@@ -24,22 +22,29 @@ export const initGlobalUI = () => {
   const dropdown = document.querySelector(".dropdown");
 
   if (optionsButton) {
-    optionsButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      showDropdown();
-    });
+    optionsButton.removeEventListener("click", onOptionsClick);
+    optionsButton.addEventListener("click", onOptionsClick);
   }
 
   if (dropdown) {
-    document.addEventListener("click", (e) => {
-      if (!dropdown.contains(e.target)) {
-        hideDropdown();
-      }
-    });
+    document.removeEventListener("click", onDocumentClick);
+    document.addEventListener("click", onDocumentClick);
   }
 };
 
-/* --- Redistributed from functions.js --- */
+const onOptionsClick = (e) => {
+  e.stopPropagation();
+  showDropdown();
+};
+
+const onDocumentClick = (e) => {
+  const dropdown = document.querySelector(".dropdown");
+  if (dropdown && !dropdown.contains(e.target)) {
+    hideDropdown();
+  }
+};
+
+/* --- Rendering Logic --- */
 
 export function refreshTitle() {
   document.querySelectorAll(".title").forEach(function (titleElement) {
@@ -50,25 +55,6 @@ export function refreshTitle() {
       titleElement.style.display = "";
     }
   });
-}
-
-export function deleteGame(id) {
-  const gameToDelete = window.games.find((game) => game.id === id);
-  if (!gameToDelete) return;
-  const delete_confirmation = `Are you sure you want to delete:\n ${toUnicodeVariant(
-    gameToDelete.whiteTitle,
-    "bold sans",
-    "sans",
-  )} ${gameToDelete.white} vs ${toUnicodeVariant(
-    gameToDelete.blackTitle,
-    "bold sans",
-    "sans",
-  )} ${gameToDelete.black} ?`;
-  if (confirm(delete_confirmation)) {
-    window.games = window.games.filter((game) => game.id !== id);
-    saveGames();
-    displayGames();
-  }
 }
 
 export function displayGames(searchTerm = window.searchTerm || "") {
@@ -184,20 +170,20 @@ export function displayGames(searchTerm = window.searchTerm || "") {
   gamesList.innerHTML = "";
   gamesList.appendChild(fragment);
 
-  // Attach event listeners for delete buttons
+  // Attach event listeners for delete buttons (delegated to window.deleteGame)
   document.querySelectorAll(".delete-game-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      deleteGame(btn.dataset.deleteId);
+      window.deleteGame(btn.dataset.deleteId);
     });
   });
 
   refreshTitle();
 }
 
-// Attach to window for compatibility if needed, though we should move away from it
+// Attach to window for compatibility
 window.displayGames = displayGames;
-window.deleteGame = deleteGame;
 
-document.addEventListener("DOMContentLoaded", initGlobalUI);
+// Call initializer
+initGlobalUI();

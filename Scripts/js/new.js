@@ -10,11 +10,9 @@ import {
   showLoader,
   hideLoader,
 } from "./utils.js";
-import { saveGames } from "./api.js";
+import { saveGames, registerGame } from "./games.js";
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
-
-window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
 const FIDE_BASE = "https://lichess.org/api/fide/player";
 
@@ -124,12 +122,14 @@ function renderSuggestions(container, query, players) {
 }
 
 function setupAutocomplete({ key }) {
+  const elSet = SIDE_ELS.get(key);
+  if (!elSet) return;
   const {
     player: input,
     title: titleInput,
     rating: ratingEl,
     suggestions: container,
-  } = SIDE_ELS.get(key);
+  } = elSet;
   if (!input || !container || !titleInput) return;
 
   function applyPlayer({ name, title, standard, rapid, blitz }) {
@@ -201,7 +201,9 @@ function setupAutocomplete({ key }) {
 function getFormState() {
   const players = Object.fromEntries(
     SIDES.map(({ key }) => {
-      const { player, title, rating } = SIDE_ELS.get(key);
+      const elSet = SIDE_ELS.get(key);
+      if (!elSet) return [key, {}];
+      const { player, title, rating } = elSet;
       return [
         key,
         {
@@ -213,12 +215,12 @@ function getFormState() {
     }),
   );
   return {
-    result: formEls.result.value,
-    time: formEls.time.value || "",
-    tournament: formEls.tournament.value,
-    round: Math.max(1, toNumberOr(formEls.round.value, 1)),
-    date: formEls.date.value,
-    gameLink: formEls.gameLink.value,
+    result: formEls.result?.value || "0",
+    time: formEls.time?.value || "",
+    tournament: formEls.tournament?.value || "",
+    round: Math.max(1, toNumberOr(formEls.round?.value, 1)),
+    date: formEls.date?.value || "",
+    gameLink: formEls.gameLink?.value || "",
     players,
   };
 }
@@ -234,7 +236,7 @@ function validateState(state) {
 function formatPlayers({ white, black }) {
   const fmt = ({ rawName, rawTitle, rawRating }) => ({
     name: formatName(capitalize(rawName)),
-    title: abbreviateTitle(rawTitle.toUpperCase()),
+    title: abbreviateTitle((rawTitle || "").toUpperCase()),
     rating: toNumberOr(rawRating, 0),
   });
   return { white: fmt(white), black: fmt(black) };
@@ -263,17 +265,6 @@ function buildGame(
   };
 }
 
-function isDuplicate({ white, black, date, tournament, round }) {
-  return window.games.some(
-    (g) =>
-      g.white === white &&
-      g.black === black &&
-      g.date === date &&
-      g.tournament === tournament &&
-      g.round === round,
-  );
-}
-
 function gameAddedAlert({ whiteTitle, white, blackTitle, black }) {
   const fmt = (title, name) =>
     `${toUnicodeVariant(title, "bold sans", "sans")} ${name}`;
@@ -291,10 +282,11 @@ async function addGame(event) {
     if (error) return alert(error);
     const players = formatPlayers(state.players);
     const game = buildGame(players, state);
-    if (isDuplicate(game))
-      return alert("This game already exists in the database!");
-    window.games.push(game);
-    saveGames();
+
+    // Register the game via the App Controller
+    const success = registerGame(game);
+    if (!success) return alert("This game already exists in the database!");
+
     event.target.reset();
     gameAddedAlert(game);
   } finally {
@@ -304,16 +296,20 @@ async function addGame(event) {
 
 /* ─── Initialization ─────────────────────────────────────────────────────── */
 
-document.addEventListener("DOMContentLoaded", () => {
+const initNewGame = () => {
   const gameForm = document.getElementById("gameForm");
+  if (!gameForm) return;
 
   SIDES.forEach(({ key, player, title, rating, suggestions }) => {
-    SIDE_ELS.set(key, {
-      player: document.getElementById(player),
-      title: document.getElementById(title),
-      rating: document.getElementById(rating),
-      suggestions: document.getElementById(suggestions),
-    });
+    const pEl = document.getElementById(player);
+    if (pEl) {
+      SIDE_ELS.set(key, {
+        player: pEl,
+        title: document.getElementById(title),
+        rating: document.getElementById(rating),
+        suggestions: document.getElementById(suggestions),
+      });
+    }
   });
 
   formEls = {
@@ -325,11 +321,13 @@ document.addEventListener("DOMContentLoaded", () => {
     gameLink: document.getElementById("gameLink"),
   };
 
-  gameForm?.addEventListener("submit", addGame);
+  gameForm.addEventListener("submit", addGame);
 
-  gameForm?.addEventListener("reset", () => {
+  gameForm.addEventListener("reset", () => {
     SIDES.forEach(({ key }) => {
-      const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
+      const elSet = SIDE_ELS.get(key);
+      if (!elSet) return;
+      const { player: playerEl, rating: ratingEl } = elSet;
       if (ratingEl) delete ratingEl.dataset.userSet;
       if (playerEl) {
         delete playerEl.dataset.standard;
@@ -341,7 +339,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   SIDES.forEach((side) => {
     setupAutocomplete(side);
-    const { rating: ratingEl } = SIDE_ELS.get(side.key);
+    const elSet = SIDE_ELS.get(side.key);
+    if (!elSet) return;
+    const { rating: ratingEl } = elSet;
     if (ratingEl) {
       ratingEl.addEventListener("input", () => {
         if (ratingEl.value.trim()) ratingEl.dataset.userSet = "true";
@@ -352,7 +352,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   formEls.time?.addEventListener("blur", ({ target }) => {
     SIDES.forEach(({ key }) => {
-      const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
+      const elSet = SIDE_ELS.get(key);
+      if (!elSet) return;
+      const { player: playerEl, rating: ratingEl } = elSet;
       if (!playerEl?.dataset.standard || ratingEl?.dataset.userSet) return;
       const cached = {
         standard: Number(playerEl.dataset.standard),
@@ -362,11 +364,15 @@ document.addEventListener("DOMContentLoaded", () => {
       ratingEl.value = pickRating(cached, target.value) || "";
     });
   });
-});
+};
+
+// Initialize
+initNewGame();
 
 document.addEventListener("keydown", ({ key }) => {
   if (key !== "Escape") return;
-  SIDES.forEach(({ key: k }) =>
-    SIDE_ELS.get(k)?.suggestions?.replaceChildren(),
-  );
+  SIDES.forEach(({ key: k }) => {
+    const elSet = SIDE_ELS.get(k);
+    if (elSet && elSet.suggestions) elSet.suggestions.replaceChildren();
+  });
 });

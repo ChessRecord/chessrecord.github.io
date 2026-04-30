@@ -3,11 +3,9 @@ class ThemeManager {
     // Cache DOM reference
     this.themeToggleBtn = null;
 
-    // Initialize when DOM is ready
-    document.addEventListener("DOMContentLoaded", () => {
-      this.createThemeToggleButton();
-      this.loadThemePreference();
-    });
+    // Initialize immediately (as a module, this runs after DOM is parsed)
+    this.createThemeToggleButton();
+    this.loadThemePreference();
   }
 
   toggleTheme() {
