@@ -23,8 +23,19 @@ const SIDES = [
   },
 ];
 
+/* ─── DOM Cache ──────────────────────────────────────────────────────────── */
+
+// Opt 1: All element lookups happen exactly once at DOMContentLoaded and are
+// stored here. Every listener and helper reads from these maps rather than
+// touching the DOM on each keystroke or event.
+
+const SIDE_ELS = new Map(); // key → { player, title, rating, suggestions }
+let formEls = {}; // { result, time, tournament, round, date, gameLink }
+
 /* ─── API ────────────────────────────────────────────────────────────────── */
 
+// Normalization lives only at the API boundary — all objects leaving this
+// function are already clean, so nothing downstream needs to reformat them.
 function normalizePlayer({
   name,
   title = "",
@@ -73,37 +84,6 @@ function pickRating({ standard = 0, rapid = 0, blitz = 0 } = {}, time) {
   );
 }
 
-// Marks a rating input as user-owned on any manual edit.
-// Once set, auto-fill will never touch that field again until the form resets.
-function trackRatingInput(ratingId) {
-  const el = document.getElementById(ratingId);
-  if (!el) return;
-  el.addEventListener("input", () => {
-    if (el.value.trim()) el.dataset.userSet = "true";
-    else delete el.dataset.userSet; // manually cleared — relinquish ownership
-  });
-}
-
-// Fills the rating input only if the user has not touched it themselves.
-function autoFillRating(ratingId, ratings, time) {
-  const el = document.getElementById(ratingId);
-  if (!el || el.dataset.userSet) return;
-  el.value = pickRating(ratings, time) || "";
-}
-
-// Returns the ratings cached on a player input element, or null if absent.
-// NOTE: This is intentional caching — ratings are stored in input.dataset on
-// player selection to power the time-control blur auto-fill without a re-fetch.
-function getCachedRatings(playerId) {
-  const el = document.getElementById(playerId);
-  if (!el?.dataset.standard) return null;
-  return {
-    standard: Number(el.dataset.standard),
-    rapid: Number(el.dataset.rapid),
-    blitz: Number(el.dataset.blitz),
-  };
-}
-
 /* ─── Autocomplete ───────────────────────────────────────────────────────── */
 
 function isFideId(query) {
@@ -118,32 +98,32 @@ function highlightMatch(text, query) {
   );
 }
 
+// Minimal escaper for injecting values into HTML attribute strings.
+const escAttr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+
+// Opt 4: One innerHTML assignment for the entire list instead of creating,
+// configuring, and appending a DOM node per player in a loop.
 function renderSuggestions(container, query, players) {
-  container.innerHTML = "";
-  players.forEach(({ name, title, standard, rapid, blitz }) => {
-    const item = document.createElement("div");
-    item.className = "autocomplete-suggestion";
-    item.innerHTML = `${title ? `<span class="title">${title}</span> ` : ""}${highlightMatch(name, query)}`;
-    Object.assign(item.dataset, {
-      name,
-      title: title || "",
-      standard,
-      rapid,
-      blitz,
-    });
-    container.appendChild(item);
-  });
+  container.innerHTML = players
+    .map(
+      ({ name, title, standard, rapid, blitz }) =>
+        `<div class="autocomplete-suggestion"
+       data-name="${escAttr(name)}" data-title="${escAttr(title || "")}"
+       data-standard="${standard}" data-rapid="${rapid}" data-blitz="${blitz}"
+     >${title ? `<span class="title">${title}</span> ` : ""}${highlightMatch(name, query)}</div>`,
+    )
+    .join("");
 }
 
-function setupAutocomplete({
-  player: playerId,
-  title: titleId,
-  rating: ratingId,
-  suggestions: containerId,
-}) {
-  const input = document.getElementById(playerId);
-  const container = document.getElementById(containerId);
-  const titleInput = document.getElementById(titleId);
+function setupAutocomplete({ key }) {
+  // Opt 1: All elements come from the pre-built cache — no getElementById call
+  // inside this function or any of its inner helpers.
+  const {
+    player: input,
+    title: titleInput,
+    rating: ratingEl,
+    suggestions: container,
+  } = SIDE_ELS.get(key);
   if (!input || !container || !titleInput) return;
 
   function applyPlayer({ name, title, standard, rapid, blitz }) {
@@ -151,12 +131,21 @@ function setupAutocomplete({
     titleInput.value = title;
     Object.assign(input.dataset, { standard, rapid, blitz });
     container.innerHTML = "";
-    const time = document.getElementById("time")?.value.trim();
-    if (time) autoFillRating(ratingId, { standard, rapid, blitz }, time);
+    // formEls.time is the cached module-level reference — no getElementById here.
+    const time = formEls.time?.value.trim();
+    if (time && !ratingEl.dataset.userSet) {
+      ratingEl.value = pickRating({ standard, rapid, blitz }, time) || "";
+    }
   }
 
-  // Extracted from the input listener so try/catch has no finally — avoids the
-  // bug where finally immediately clears the error message set in catch.
+  function clearSide() {
+    delete input.dataset.standard;
+    delete input.dataset.rapid;
+    delete input.dataset.blitz;
+    titleInput.value = "";
+    if (!ratingEl.dataset.userSet) ratingEl.value = "";
+  }
+
   async function onFideQuery(query) {
     try {
       const player = await fetchFidePlayer(parseInt(query));
@@ -179,9 +168,7 @@ function setupAutocomplete({
     const query = target.value.trim();
     container.innerHTML = "";
     if (!query) {
-      delete input.dataset.standard;
-      delete input.dataset.rapid;
-      delete input.dataset.blitz;
+      clearSide();
       return;
     }
     if (isFideId(query)) {
@@ -204,32 +191,59 @@ function setupAutocomplete({
   });
 }
 
-/* ─── Game Helpers ───────────────────────────────────────────────────────── */
+/* ─── Form State ─────────────────────────────────────────────────────────── */
 
-function resolvePlayers() {
-  const get = (id) => document.getElementById(id);
-  return Object.fromEntries(
-    SIDES.map(({ key, player, title, rating }) => [
-      key,
-      {
-        name: formatName(capitalize(get(player).value)),
-        title: abbreviateTitle(get(title).value.toUpperCase()),
-        rating: parseInt(get(rating).value) || 0,
-      },
-    ]),
+// Opt 2: A single DOM pass over SIDE_ELS and formEls collects all player and
+// game fields at once. Raw (un-formatted) strings are returned so that
+// validateState can do its cheap checks before any formatting runs.
+function getFormState() {
+  const players = Object.fromEntries(
+    SIDES.map(({ key }) => {
+      const { player, title, rating } = SIDE_ELS.get(key);
+      return [
+        key,
+        {
+          rawName: player.value.trim(),
+          rawTitle: title.value,
+          rawRating: rating.value,
+        },
+      ];
+    }),
   );
-}
-
-function collectFormData() {
   return {
-    result: document.getElementById("result").value,
-    time: document.getElementById("time").value || "",
-    tournament: document.getElementById("tournament").value,
-    round: parseInt(document.getElementById("round").value) || 1,
-    date: document.getElementById("date").value,
-    gameLink: document.getElementById("gameLink").value,
+    result: formEls.result.value,
+    time: formEls.time.value || "",
+    tournament: formEls.tournament.value,
+    round: Math.max(1, toNumberOr(formEls.round.value, 1)),
+    date: formEls.date.value,
+    gameLink: formEls.gameLink.value,
+    players,
   };
 }
+
+// Opt 3: Validates cheap conditions (string checks, numeric range) on raw
+// state before any expensive formatting (formatName, capitalize, abbreviateTitle)
+// is ever called. Returns an error string, or null if valid.
+function validateState(state) {
+  if (state.result === "0") return "Please select a result!";
+  if (!state.players.white.rawName) return "White player name cannot be empty!";
+  if (!state.players.black.rawName) return "Black player name cannot be empty!";
+  if (state.round < 1) return "Round must be a positive integer!";
+  return null;
+}
+
+// Runs only after validateState passes — formatting effort is never wasted on
+// invalid submissions.
+function formatPlayers({ white, black }) {
+  const fmt = ({ rawName, rawTitle, rawRating }) => ({
+    name: formatName(capitalize(rawName)),
+    title: abbreviateTitle(rawTitle.toUpperCase()),
+    rating: toNumberOr(rawRating, 0),
+  });
+  return { white: fmt(white), black: fmt(black) };
+}
+
+/* ─── Game Helpers ───────────────────────────────────────────────────────── */
 
 function buildGame(
   players,
@@ -252,10 +266,13 @@ function buildGame(
   };
 }
 
+// Full five-field identity check — a game is duplicate only when every one of
+// these matches, not just a partial overlap.
 function isDuplicate({ white, black, date, tournament, round }) {
   return window.games.some(
     (g) =>
-      (g.white === white || g.black === black) &&
+      g.white === white &&
+      g.black === black &&
       g.date === date &&
       g.tournament === tournament &&
       g.round === round,
@@ -270,19 +287,26 @@ function gameAddedAlert({ whiteTitle, white, blackTitle, black }) {
 
 /* ─── Form Submission ────────────────────────────────────────────────────── */
 
+// Pipeline: collect → validate (cheap) → format (expensive) → build → dedupe
+//           → persist → reset UI.
 async function addGame(event) {
   event.preventDefault();
   showLoader("#addGame span");
   try {
-    const formData = collectFormData();
-    if (formData.result === "0") return alert("Please select a result!");
+    // 1. Collect — one DOM pass, raw values (Opt 2)
+    const state = getFormState();
 
-    const players = resolvePlayers();
-    const game = buildGame(players, formData);
+    // 2. Validate — cheap string/range checks before any formatting (Opt 3)
+    const error = validateState(state);
+    if (error) return alert(error);
 
+    // 3. Format — expensive normalization runs only for valid submissions
+    const players = formatPlayers(state.players);
+
+    // 4. Build  5. Dedupe  6. Persist  7. Reset UI
+    const game = buildGame(players, state);
     if (isDuplicate(game))
-      return alert("Game already exists or player conflict in this round!");
-
+      return alert("This exact game already exists in the database!");
     window.games.push(game);
     saveGames();
     event.target.reset();
@@ -297,13 +321,32 @@ async function addGame(event) {
 document.addEventListener("DOMContentLoaded", () => {
   const gameForm = document.getElementById("gameForm");
 
+  // Opt 1: Resolve every element once and store in module-level caches.
+  // From this point forward, no function needs to call getElementById.
+  SIDES.forEach(({ key, player, title, rating, suggestions }) => {
+    SIDE_ELS.set(key, {
+      player: document.getElementById(player),
+      title: document.getElementById(title),
+      rating: document.getElementById(rating),
+      suggestions: document.getElementById(suggestions),
+    });
+  });
+
+  formEls = {
+    result: document.getElementById("result"),
+    time: document.getElementById("time"),
+    tournament: document.getElementById("tournament"),
+    round: document.getElementById("round"),
+    date: document.getElementById("date"),
+    gameLink: document.getElementById("gameLink"),
+  };
+
   gameForm?.addEventListener("submit", addGame);
 
-  // Wipe all tracking state when the form resets after a successful submit
   gameForm?.addEventListener("reset", () => {
-    SIDES.forEach(({ player, rating }) => {
-      delete document.getElementById(rating)?.dataset.userSet;
-      const playerEl = document.getElementById(player);
+    SIDES.forEach(({ key }) => {
+      const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
+      if (ratingEl) delete ratingEl.dataset.userSet;
       if (playerEl) {
         delete playerEl.dataset.standard;
         delete playerEl.dataset.rapid;
@@ -312,22 +355,41 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  SIDES.forEach(setupAutocomplete);
-  SIDES.forEach(({ rating }) => trackRatingInput(rating));
+  // Opt 5: Single initialization pass combines autocomplete setup and rating
+  // ownership tracking — the two old SIDES.forEach loops become one.
+  SIDES.forEach((side) => {
+    setupAutocomplete(side);
 
-  // On blur (not input) so the rating only recalculates once the user has
-  // finished typing and moved away from the time control field
-  document.getElementById("time")?.addEventListener("blur", ({ target }) => {
-    SIDES.forEach(({ player, rating }) => {
-      const cached = getCachedRatings(player);
-      if (cached) autoFillRating(rating, cached, target.value);
+    // Inline of the old trackRatingInput: marks the field as user-owned on
+    // any manual edit so auto-fill never clobbers intentional input.
+    const { rating: ratingEl } = SIDE_ELS.get(side.key);
+    if (ratingEl) {
+      ratingEl.addEventListener("input", () => {
+        if (ratingEl.value.trim()) ratingEl.dataset.userSet = "true";
+        else delete ratingEl.dataset.userSet;
+      });
+    }
+  });
+
+  // On blur (not input) so ratings recalculate only once the user leaves the
+  // time-control field, not on every character typed.
+  formEls.time?.addEventListener("blur", ({ target }) => {
+    SIDES.forEach(({ key }) => {
+      const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
+      if (!playerEl?.dataset.standard || ratingEl?.dataset.userSet) return;
+      const cached = {
+        standard: Number(playerEl.dataset.standard),
+        rapid: Number(playerEl.dataset.rapid),
+        blitz: Number(playerEl.dataset.blitz),
+      };
+      ratingEl.value = pickRating(cached, target.value) || "";
     });
   });
 });
 
 document.addEventListener("keydown", ({ key }) => {
   if (key !== "Escape") return;
-  SIDES.forEach(({ suggestions }) =>
-    document.getElementById(suggestions)?.replaceChildren(),
+  SIDES.forEach(({ key: k }) =>
+    SIDE_ELS.get(k)?.suggestions?.replaceChildren(),
   );
 });
