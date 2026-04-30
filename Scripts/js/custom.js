@@ -6,6 +6,50 @@ window.games = JSON.parse(localStorage.getItem("chessGames")) || [];
 
 const FIDE_SEARCH_API = "https://lichess.org/api/fide/player";
 
+/* ─── Shared Rating Helpers ──────────────────────────────────────────────── */
+
+function pickRating({ standard = 0, rapid = 0, blitz = 0 } = {}, time) {
+  return (
+    { Classical: standard, Rapid: rapid, Blitz: blitz, Bullet: blitz }[
+      getTimeControlCategory(time)
+    ] ?? standard
+  );
+}
+
+// Marks a rating input as user-owned on any manual edit.
+// Once set, auto-fill will never touch that field again until the form resets.
+function trackRatingInput(ratingInputId) {
+  const el = document.getElementById(ratingInputId);
+  if (!el) return;
+  el.addEventListener("input", () => {
+    if (el.value.trim()) {
+      el.dataset.userSet = "true";
+    } else {
+      // Field manually cleared — relinquish ownership so auto-fill can help again
+      delete el.dataset.userSet;
+    }
+  });
+}
+
+// Fills the rating input only if the user has not touched it themselves.
+function autoFillRating(ratingInputId, ratings, time) {
+  const el = document.getElementById(ratingInputId);
+  if (!el || el.dataset.userSet) return;
+  const rating = pickRating(ratings, time);
+  el.value = rating || "";
+}
+
+// Returns the ratings cached on a player input element, or null if absent.
+function getCachedRatings(playerId) {
+  const el = document.getElementById(playerId);
+  if (!el?.dataset.standard) return null;
+  return {
+    standard: Number(el.dataset.standard),
+    rapid: Number(el.dataset.rapid),
+    blitz: Number(el.dataset.blitz),
+  };
+}
+
 /* ─── Autocomplete ───────────────────────────────────────────────────────── */
 
 async function fetchPlayerSuggestions(query) {
@@ -18,9 +62,12 @@ async function fetchPlayerSuggestions(query) {
     );
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
-    return data.map((p) => ({
-      name: formatName(p.name),
-      title: abbreviateTitle(p.title),
+    return data.map(({ name, title, standard = 0, rapid = 0, blitz = 0 }) => ({
+      name: formatName(name),
+      title: abbreviateTitle(title),
+      standard,
+      rapid,
+      blitz,
     }));
   } catch (err) {
     console.error("Error fetching player suggestions:", err);
@@ -41,17 +88,22 @@ function highlightMatch(text, query) {
 function renderSuggestions(input, container, suggestions) {
   const query = input.value.trim();
   container.innerHTML = "";
-  suggestions.forEach(({ name, title }) => {
+  suggestions.forEach(({ name, title, standard, rapid, blitz }) => {
     const item = document.createElement("div");
     item.className = "autocomplete-suggestion";
     item.innerHTML = `${title ? `<span class="title">${title}</span> ` : ""}${highlightMatch(name, query)}`;
-    item.dataset.name = name;
-    item.dataset.title = title || "";
+    Object.assign(item.dataset, {
+      name,
+      title: title || "",
+      standard,
+      rapid,
+      blitz,
+    });
     container.appendChild(item);
   });
 }
 
-function setupAutocomplete(inputId, containerId, titleId) {
+function setupAutocomplete(inputId, containerId, titleId, ratingInputId) {
   const input = document.getElementById(inputId);
   const container = document.getElementById(containerId);
   const titleInput = document.getElementById(titleId);
@@ -63,15 +115,34 @@ function setupAutocomplete(inputId, containerId, titleId) {
       renderSuggestions(input, container, await fetchPlayerSuggestions(query));
     } else {
       container.innerHTML = "";
+      if (!query) {
+        delete input.dataset.standard;
+        delete input.dataset.rapid;
+        delete input.dataset.blitz;
+      }
     }
   });
 
   container.addEventListener("click", ({ target }) => {
     const item = target.closest(".autocomplete-suggestion");
     if (!item) return;
+
     input.value = item.dataset.name;
     titleInput.value = item.dataset.title;
     container.innerHTML = "";
+
+    // Cache per-time-control ratings on the player input for later lookups
+    Object.assign(input.dataset, {
+      standard: item.dataset.standard,
+      rapid: item.dataset.rapid,
+      blitz: item.dataset.blitz,
+    });
+
+    // Auto-fill rating if the time control field has already been filled and left
+    const timeEl = document.getElementById("time");
+    if (timeEl?.value.trim()) {
+      autoFillRating(ratingInputId, getCachedRatings(inputId), timeEl.value);
+    }
   });
 }
 
@@ -168,9 +239,53 @@ async function addGame(event) {
 /* ─── Initialization ─────────────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("gameForm")?.addEventListener("submit", addGame);
-  setupAutocomplete("playerWhite", "whiteSuggestions", "whiteTitle");
-  setupAutocomplete("playerBlack", "blackSuggestions", "blackTitle");
+  const gameForm = document.getElementById("gameForm");
+
+  gameForm?.addEventListener("submit", addGame);
+
+  // Wipe all tracking state when the form resets after a successful submit
+  gameForm?.addEventListener("reset", () => {
+    ["whiteRating", "blackRating"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      delete el.dataset.userSet;
+    });
+    ["playerWhite", "playerBlack"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      delete el.dataset.standard;
+      delete el.dataset.rapid;
+      delete el.dataset.blitz;
+    });
+  });
+
+  setupAutocomplete(
+    "playerWhite",
+    "whiteSuggestions",
+    "whiteTitle",
+    "whiteRating",
+  );
+  setupAutocomplete(
+    "playerBlack",
+    "blackSuggestions",
+    "blackTitle",
+    "blackRating",
+  );
+  trackRatingInput("whiteRating");
+  trackRatingInput("blackRating");
+
+  // On blur (not input) so the rating only recalculates once the user has
+  // finished typing and moved away from the time control field
+  const SIDES = [
+    { playerId: "playerWhite", ratingId: "whiteRating" },
+    { playerId: "playerBlack", ratingId: "blackRating" },
+  ];
+  document.getElementById("time")?.addEventListener("blur", ({ target }) => {
+    SIDES.forEach(({ playerId, ratingId }) => {
+      const cached = getCachedRatings(playerId);
+      if (cached) autoFillRating(ratingId, cached, target.value);
+    });
+  });
 });
 
 document.addEventListener("keydown", ({ key }) => {
