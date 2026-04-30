@@ -1,4 +1,7 @@
-async function scrapeChessResults(url) {
+// pairings.js
+import { calcChange, showLoader, hideLoader } from "./utils.js";
+
+export async function scrapeChessResults(url) {
   const proxy = "https://proxy.caticuchess.workers.dev/";
   const fullUrl = proxy + url;
 
@@ -17,20 +20,6 @@ async function scrapeChessResults(url) {
       return txt === "" ? "Title" : txt;
     })
     .get();
-
-  // Map header keys to normalized property names
-  const keyMap = {
-    "Rd.": "round",
-    "Bo.": "boardNo",
-    SNo: "playerStartNo",
-    Title: "opponentTitle",
-    Name: "opponentName",
-    Rtg: "opponentRating",
-    FED: "opponentFederation",
-    "Club/City": "opponentClub",
-    "Pts.": "opponentPoints",
-    "Res.": "result",
-  };
 
   // Helper to build opponent profile URL by replacing snr in the original url
   function buildOpponentProfileUrl(baseUrl, opponentStartNo) {
@@ -73,9 +62,6 @@ async function scrapeChessResults(url) {
         headerKeys.forEach((key, idx) => {
           rowObj[key] = cells[idx];
         });
-
-        const nameCell = $(row).find("td").eq(headerKeys.indexOf("Name"));
-        const nameLink = nameCell.find("a").attr("href");
 
         // Compose pairing object using mapped keys
         const pairing = {
@@ -141,7 +127,7 @@ async function scrapeChessResults(url) {
 }
 
 // Main function to fetch and return variables for all rounds
-async function getChessResults(url) {
+export async function getChessResults(url) {
   if (!url.includes("chess-results.com")) {
     throw new Error("Please enter a valid Chess-Results URL.");
   }
@@ -149,10 +135,14 @@ async function getChessResults(url) {
   const { playerInfo, pairings } = await scrapeChessResults(url);
 
   const rating = parseInt(playerInfo["Rating"]);
-  const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(/,/g, "."));
   if (isNaN(rating)) {
     throw new Error("Could not detect your rating from the page.");
   }
+
+  const rtgchgStr = playerInfo["FIDE rtg +/-"]
+    ? playerInfo["FIDE rtg +/-"].replace(/,/g, ".")
+    : "0";
+  const rtgchg = parseFloat(rtgchgStr);
 
   // Calculate rating change info for all rounds
   const rounds = pairings.map((pairing) => {
@@ -201,7 +191,7 @@ async function getChessResults(url) {
 }
 
 // Render rounds data into #pairings-table in the required format
-function renderPairingsTable(rounds, playerName, playerRating, url) {
+export function renderPairingsTable(rounds, playerName, playerRating, url) {
   // Show player name and rating above the table
   if (playerName) {
     if ($("#player-name").length === 0) {
@@ -298,7 +288,7 @@ function renderPairingsTable(rounds, playerName, playerRating, url) {
 }
 
 // Example usage for UI (call this from your form/button event)
-async function showPairingsTableFromInput() {
+export async function showPairingsTableFromInput() {
   let url = $("#url-input").val().trim();
   // Save to localStorage
   if (url) {
@@ -376,8 +366,3 @@ $(function () {
     showPairingsTableFromInput();
   });
 });
-
-// Example usage:
-// getChessResults("https://chess-results.com/tnr123456.aspx?lan=1&art=9&snr=1")
-//   .then(res => console.log(JSON.stringify(res, null, 2)))
-//   .catch(err => console.error(err));

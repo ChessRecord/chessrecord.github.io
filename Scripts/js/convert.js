@@ -1,4 +1,6 @@
 // convert.js - PGN to JSON converter page controller
+import { isEmpty } from "./utils.js";
+import { pgnToJson } from "./api.js";
 
 window.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("PGN-Form");
@@ -12,7 +14,6 @@ window.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Using global pgnToJson from functions.js
     const json = pgnToJson(pgn);
     if (isEmpty(json)) {
       alert("No valid games found in PGN.");

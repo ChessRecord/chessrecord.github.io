@@ -1,4 +1,5 @@
 // games.js - Index page controller
+import { displayGames } from "./ui.js";
 
 /* --- Initialization --- */
 window.games = JSON.parse(localStorage.getItem("chessGames")) || [];

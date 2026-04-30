@@ -1,4 +1,16 @@
 // new.js — New Game page controller
+import {
+  formatName,
+  capitalize,
+  abbreviateTitle,
+  getTimeControlCategory,
+  toNumberOr,
+  generateUniqueID,
+  toUnicodeVariant,
+  showLoader,
+  hideLoader,
+} from "./utils.js";
+import { saveGames } from "./api.js";
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
@@ -25,17 +37,11 @@ const SIDES = [
 
 /* ─── DOM Cache ──────────────────────────────────────────────────────────── */
 
-// Opt 1: All element lookups happen exactly once at DOMContentLoaded and are
-// stored here. Every listener and helper reads from these maps rather than
-// touching the DOM on each keystroke or event.
-
 const SIDE_ELS = new Map(); // key → { player, title, rating, suggestions }
 let formEls = {}; // { result, time, tournament, round, date, gameLink }
 
 /* ─── API ────────────────────────────────────────────────────────────────── */
 
-// Normalization lives only at the API boundary — all objects leaving this
-// function are already clean, so nothing downstream needs to reformat them.
 function normalizePlayer({
   name,
   title = "",
@@ -98,11 +104,6 @@ function highlightMatch(text, query) {
   );
 }
 
-// Minimal escaper for injecting values into HTML attribute strings.
-const escAttr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-
-// Opt 4: One innerHTML assignment for the entire list instead of creating,
-// configuring, and appending a DOM node per player in a loop.
 function renderSuggestions(container, query, players) {
   const fragment = document.createDocumentFragment();
   players.forEach((p) => {
@@ -123,8 +124,6 @@ function renderSuggestions(container, query, players) {
 }
 
 function setupAutocomplete({ key }) {
-  // Opt 1: All elements come from the pre-built cache — no getElementById call
-  // inside this function or any of its inner helpers.
   const {
     player: input,
     title: titleInput,
@@ -138,7 +137,6 @@ function setupAutocomplete({ key }) {
     titleInput.value = title;
     Object.assign(input.dataset, { standard, rapid, blitz });
     container.innerHTML = "";
-    // formEls.time is the cached module-level reference — no getElementById here.
     const time = formEls.time?.value.trim();
     if (time && !ratingEl.dataset.userSet) {
       ratingEl.value = pickRating({ standard, rapid, blitz }, time) || "";
@@ -200,9 +198,6 @@ function setupAutocomplete({ key }) {
 
 /* ─── Form State ─────────────────────────────────────────────────────────── */
 
-// Opt 2: A single DOM pass over SIDE_ELS and formEls collects all player and
-// game fields at once. Raw (un-formatted) strings are returned so that
-// validateState can do its cheap checks before any formatting runs.
 function getFormState() {
   const players = Object.fromEntries(
     SIDES.map(({ key }) => {
@@ -228,9 +223,6 @@ function getFormState() {
   };
 }
 
-// Opt 3: Validates cheap conditions (string checks, numeric range) on raw
-// state before any expensive formatting (formatName, capitalize, abbreviateTitle)
-// is ever called. Returns an error string, or null if valid.
 function validateState(state) {
   if (state.result === "0") return "Please select a result!";
   if (!state.players.white.rawName) return "White player name cannot be empty!";
@@ -239,8 +231,6 @@ function validateState(state) {
   return null;
 }
 
-// Runs only after validateState passes — formatting effort is never wasted on
-// invalid submissions.
 function formatPlayers({ white, black }) {
   const fmt = ({ rawName, rawTitle, rawRating }) => ({
     name: formatName(capitalize(rawName)),
@@ -273,8 +263,6 @@ function buildGame(
   };
 }
 
-// Full five-field identity check — a game is duplicate only when every one of
-// these matches, not just a partial overlap.
 function isDuplicate({ white, black, date, tournament, round }) {
   return window.games.some(
     (g) =>
@@ -294,23 +282,14 @@ function gameAddedAlert({ whiteTitle, white, blackTitle, black }) {
 
 /* ─── Form Submission ────────────────────────────────────────────────────── */
 
-// Pipeline: collect → validate (cheap) → format (expensive) → build → dedupe
-//           → persist → reset UI.
 async function addGame(event) {
   event.preventDefault();
   showLoader("#addGame span");
   try {
-    // 1. Collect — one DOM pass, raw values (Opt 2)
     const state = getFormState();
-
-    // 2. Validate — cheap string/range checks before any formatting (Opt 3)
     const error = validateState(state);
     if (error) return alert(error);
-
-    // 3. Format — expensive normalization runs only for valid submissions
     const players = formatPlayers(state.players);
-
-    // 4. Build  5. Dedupe  6. Persist  7. Reset UI
     const game = buildGame(players, state);
     if (isDuplicate(game))
       return alert("This game already exists in the database!");
@@ -328,8 +307,6 @@ async function addGame(event) {
 document.addEventListener("DOMContentLoaded", () => {
   const gameForm = document.getElementById("gameForm");
 
-  // Opt 1: Resolve every element once and store in module-level caches.
-  // From this point forward, no function needs to call getElementById.
   SIDES.forEach(({ key, player, title, rating, suggestions }) => {
     SIDE_ELS.set(key, {
       player: document.getElementById(player),
@@ -362,13 +339,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Opt 5: Single initialization pass combines autocomplete setup and rating
-  // ownership tracking — the two old SIDES.forEach loops become one.
   SIDES.forEach((side) => {
     setupAutocomplete(side);
-
-    // Inline of the old trackRatingInput: marks the field as user-owned on
-    // any manual edit so auto-fill never clobbers intentional input.
     const { rating: ratingEl } = SIDE_ELS.get(side.key);
     if (ratingEl) {
       ratingEl.addEventListener("input", () => {
@@ -378,7 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // On blur (not input) so ratings recalculate only once the user leaves the time-control field, not on every character typed.
   formEls.time?.addEventListener("blur", ({ target }) => {
     SIDES.forEach(({ key }) => {
       const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
