@@ -187,6 +187,7 @@ export function importJSON(event) {
         input.value = "";
       }
     };
+    reader.onerror = () => {
       alert("Error parsing JSON or PGN file!");
       input.value = "";
     };
