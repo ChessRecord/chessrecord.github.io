@@ -1,4 +1,4 @@
-// custom.js — Custom page controller
+// new.js — New Game page controller
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
@@ -104,15 +104,22 @@ const escAttr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 // Opt 4: One innerHTML assignment for the entire list instead of creating,
 // configuring, and appending a DOM node per player in a loop.
 function renderSuggestions(container, query, players) {
-  container.innerHTML = players
-    .map(
-      ({ name, title, standard, rapid, blitz }) =>
-        `<div class="autocomplete-suggestion"
-       data-name="${escAttr(name)}" data-title="${escAttr(title || "")}"
-       data-standard="${standard}" data-rapid="${rapid}" data-blitz="${blitz}"
-     >${title ? `<span class="title">${title}</span> ` : ""}${highlightMatch(name, query)}</div>`,
-    )
-    .join("");
+  const fragment = document.createDocumentFragment();
+  players.forEach((p) => {
+    const div = document.createElement("div");
+    div.className = "autocomplete-suggestion";
+    Object.assign(div.dataset, {
+      name: p.name,
+      title: p.title || "",
+      standard: p.standard,
+      rapid: p.rapid,
+      blitz: p.blitz,
+    });
+    div.innerHTML = `${p.title ? `<span class="title">${p.title}</span> ` : ""}${highlightMatch(p.name, query)}`;
+    fragment.appendChild(div);
+  });
+  container.innerHTML = "";
+  container.appendChild(fragment);
 }
 
 function setupAutocomplete({ key }) {
@@ -306,7 +313,7 @@ async function addGame(event) {
     // 4. Build  5. Dedupe  6. Persist  7. Reset UI
     const game = buildGame(players, state);
     if (isDuplicate(game))
-      return alert("This exact game already exists in the database!");
+      return alert("This game already exists in the database!");
     window.games.push(game);
     saveGames();
     event.target.reset();
@@ -371,8 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // On blur (not input) so ratings recalculate only once the user leaves the
-  // time-control field, not on every character typed.
+  // On blur (not input) so ratings recalculate only once the user leaves the time-control field, not on every character typed.
   formEls.time?.addEventListener("blur", ({ target }) => {
     SIDES.forEach(({ key }) => {
       const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
