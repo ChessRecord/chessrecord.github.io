@@ -10,6 +10,18 @@ const showDropdown = () => {
   if (dropdown) dropdown.classList.toggle("show");
 };
 
+/* --- Global UI Helpers --- */
+function refreshTitle() {
+  document.querySelectorAll(".title").forEach(function (titleElement) {
+    const content = titleElement.textContent.trim().toLowerCase();
+    if (!content || content === "none") {
+      titleElement.style.display = "none";
+    } else {
+      titleElement.style.display = "";
+    }
+  });
+}
+
 /* --- Global UI Initializer --- */
 const initGlobalUI = () => {
   const optionsButton = document.querySelector(".options");

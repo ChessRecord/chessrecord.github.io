@@ -98,9 +98,6 @@ function highlightMatch(text, query) {
   );
 }
 
-// Minimal escaper for injecting values into HTML attribute strings.
-const escAttr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-
 // Opt 4: One innerHTML assignment for the entire list instead of creating,
 // configuring, and appending a DOM node per player in a loop.
 function renderSuggestions(container, query, players) {
@@ -140,7 +137,7 @@ function setupAutocomplete({ key }) {
     container.innerHTML = "";
     // formEls.time is the cached module-level reference — no getElementById here.
     const time = formEls.time?.value.trim();
-    if (time && !ratingEl.dataset.userSet) {
+    if (!ratingEl.dataset.userSet) {
       ratingEl.value = pickRating({ standard, rapid, blitz }, time) || "";
     }
   }
@@ -273,13 +270,12 @@ function buildGame(
   };
 }
 
-// Full five-field identity check — a game is duplicate only when every one of
-// these matches, not just a partial overlap.
+// Blocks submission if either player already appears in the same round,
+// tournament, and date — not just when both players match together.
 function isDuplicate({ white, black, date, tournament, round }) {
   return window.games.some(
     (g) =>
-      g.white === white &&
-      g.black === black &&
+      (g.white === white || g.black === black) &&
       g.date === date &&
       g.tournament === tournament &&
       g.round === round,

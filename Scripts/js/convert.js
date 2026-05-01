@@ -12,7 +12,7 @@ window.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Using global pgnToJson from functions.js
+    // Using pgnToJson from utils.js
     const json = pgnToJson(pgn);
     if (isEmpty(json)) {
       alert("No valid games found in PGN.");
