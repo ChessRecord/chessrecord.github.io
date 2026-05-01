@@ -1,6 +1,6 @@
 // modal.js
 
-export const Modal = (() => {
+const Modal = (() => {
   function getBackdrop() {
     let el = document.getElementById("blur");
     if (!el) {

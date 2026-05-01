@@ -1,18 +1,17 @@
 // utils.js - General utility functions and Chess logic
-// This file is now a "Dumb" utility library with zero application state.
 
-export const isValidString = (s) => typeof s === "string" && s.length > 0;
+const isValidString = (s) => typeof s === "string" && s.length > 0;
 
-export const toNumberOr = (value, fallback) => {
+const toNumberOr = (value, fallback) => {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
 };
 
-export function generateUniqueID() {
+function generateUniqueID() {
   return crypto.randomUUID();
 }
 
-export function capitalize(str) {
+function capitalize(str) {
   if (!isValidString(str)) return "";
   return str
     .split(" ")
@@ -21,7 +20,7 @@ export function capitalize(str) {
     .join(" ");
 }
 
-export function formatName(name) {
+function formatName(name) {
   if (!isValidString(name)) return "";
   const parts = name.split(", ");
   if (parts.length !== 2) return name.trim();
@@ -29,7 +28,7 @@ export function formatName(name) {
   return `${first.trim()} ${last.trim()}`.trim();
 }
 
-export function isEmpty(array) {
+function isEmpty(array) {
   return !array || array.length === 0;
 }
 
@@ -45,7 +44,7 @@ const buildSpecialMap = (startCode, rangeStart = 97, rangeEnd = 122) => {
 const SPECIAL_P = Object.freeze(buildSpecialMap(0x249c));
 const SPECIAL_W = Object.freeze(buildSpecialMap(0xff41));
 
-export function toUnicodeVariant(str, variant, flags) {
+function toUnicodeVariant(str, variant, flags) {
   if (!isValidString(str)) return "";
   const offsets = {
     m: [0x1d670, 0x1d7f6],
@@ -138,7 +137,7 @@ export function toUnicodeVariant(str, variant, flags) {
 }
 
 /* --- Loader UI Helpers --- */
-export function showLoader(target) {
+function showLoader(target) {
   const el = document.querySelector(target);
   if (!el) return;
   if (typeof el._oldLoaderValue === "undefined") {
@@ -149,7 +148,7 @@ export function showLoader(target) {
   el.innerHTML = "Loading";
 }
 
-export function hideLoader(target) {
+function hideLoader(target) {
   const el = document.querySelector(target);
   if (!el) return;
   const loader = document.getElementById("loader");
@@ -162,7 +161,7 @@ export function hideLoader(target) {
 
 /* --- Chess Specific Logic --- */
 
-export const TITLE_MAP = Object.freeze({
+const TITLE_MAP = Object.freeze({
   grandmaster: "GM",
   internationalmaster: "IM",
   fidemaster: "FM",
@@ -174,7 +173,7 @@ export const TITLE_MAP = Object.freeze({
   nationalmaster: "NM",
 });
 
-export const TIME_CONTROL_ICONS = Object.freeze({
+const TIME_CONTROL_ICONS = Object.freeze({
   Bullet: '<i class="fa-solid fa-bolt-lightning"></i><span class="gap"></span>',
   Blitz: '<i class="fa-solid fa-bolt-lightning"></i><span class="gap"></span>',
   Rapid: '<i class="fa-solid fa-clock"></i><span class="gap"></span>',
@@ -183,13 +182,13 @@ export const TIME_CONTROL_ICONS = Object.freeze({
   Unknown: "",
 });
 
-export function abbreviateTitle(title) {
+function abbreviateTitle(title) {
   if (!isValidString(title)) return "";
   const normalized = title.toLowerCase().replace(/\s+/g, "");
   return TITLE_MAP[normalized] || title;
 }
 
-export function getTimeControlCategory(timeControl) {
+function getTimeControlCategory(timeControl) {
   const parseTimeControl = (tc) => {
     const cleanTC = String(tc).toLowerCase().replace(/\s+/g, "");
     let initialTime, increment;
@@ -228,7 +227,7 @@ export function getTimeControlCategory(timeControl) {
   }
 }
 
-export function formatResult(result) {
+function formatResult(result) {
   if (!isValidString(result)) return "*";
   const cleaned = result.trim().replace(/½/g, "1/2").replace(/\s+/g, "");
   switch (cleaned) {
@@ -243,7 +242,7 @@ export function formatResult(result) {
   }
 }
 
-export function normalizeResult(result) {
+function normalizeResult(result) {
   if (!isValidString(result)) return "*";
   const cleaned = result.trim().replace(/½/g, "1/2").replace(/\s+/g, "");
   switch (cleaned) {
@@ -257,11 +256,11 @@ export function normalizeResult(result) {
 }
 
 // Rating Calculator logic
-export function expectedScore(myRating, oppRating) {
+function expectedScore(myRating, oppRating) {
   return 1 / (1 + Math.pow(10, (oppRating - myRating) / 400));
 }
 
-export function calcChange(myRating, oppRating, result, k = 40) {
+function calcChange(myRating, oppRating, result, k = 40) {
   if (oppRating === 0) return "";
   const E = expectedScore(myRating, oppRating);
   return Math.round(k * (result - E) * 10) / 10;

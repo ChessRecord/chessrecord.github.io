@@ -1,36 +1,38 @@
-// pairings.js
-import { calcChange, showLoader, hideLoader } from "./utils.js";
-
-/**
- * Scrapes data from chess-results.com via a proxy.
- * Uses jQuery for parsing and extraction as per user preference.
- */
-export async function scrapeChessResults(url) {
+async function scrapeChessResults(url) {
   const proxy = "https://proxy.caticuchess.workers.dev/";
   const fullUrl = proxy + url;
 
   const response = await fetch(fullUrl);
   const htmlText = await response.text();
 
-  // Parse HTML using jQuery
   const $html = $("<div>").html(htmlText);
-
-  // The pairings table is typically the 6th table (index 5)
   const table = $html.find("table").eq(5);
   const rows = table.find("tr");
 
   // Extract header keys from <th>
   const headerCells = table.find("tr").first().find("th");
-  const headerKeys = headerCells
+  let headerKeys = headerCells
     .map((_, th) => {
       const txt = $(th).text().trim();
       return txt === "" ? "Title" : txt;
     })
     .get();
 
-  /**
-   * Helper to build opponent profile URL by replacing snr in the original url
-   */
+  // Map header keys to normalized property names
+  const keyMap = {
+    "Rd.": "round",
+    "Bo.": "boardNo",
+    SNo: "playerStartNo",
+    Title: "opponentTitle",
+    Name: "opponentName",
+    Rtg: "opponentRating",
+    FED: "opponentFederation",
+    "Club/City": "opponentClub",
+    "Pts.": "opponentPoints",
+    "Res.": "result",
+  };
+
+  // Helper to build opponent profile URL by replacing snr in the original url
   function buildOpponentProfileUrl(baseUrl, opponentStartNo) {
     if (!baseUrl || !opponentStartNo || isNaN(Number(opponentStartNo)))
       return null;
@@ -58,7 +60,7 @@ export async function scrapeChessResults(url) {
   rows.each((i, row) => {
     // Skip header row
     if (i === 0) return;
-    // Only process odd rows (standard chess-results pairing list layout)
+    // Only process odd rows (as before)
     if (i % 2 === 1) {
       const cells = $(row)
         .find("td")
@@ -72,11 +74,10 @@ export async function scrapeChessResults(url) {
           rowObj[key] = cells[idx];
         });
 
-        const $row = $(row);
-        const resIdx = headerKeys.indexOf("Res.");
-        const isBlack = $row.find(`td:eq(${resIdx}) div.FarbesT`).length > 0;
-        const isWhite = $row.find(`td:eq(${resIdx}) div.FarbewT`).length > 0;
+        const nameCell = $(row).find("td").eq(headerKeys.indexOf("Name"));
+        const nameLink = nameCell.find("a").attr("href");
 
+        // Compose pairing object using mapped keys
         const pairing = {
           round: rowObj["Rd."],
           boardNo: rowObj["Bo."],
@@ -88,7 +89,15 @@ export async function scrapeChessResults(url) {
           opponentClub: rowObj["Club/City"],
           opponentPoints: rowObj["Pts."],
           result: rowObj["Res."],
-          playerColor: isBlack ? "Black" : isWhite ? "White" : "",
+          playerColor:
+            $(row).find("td:eq(" + headerKeys.indexOf("Res.") + ") div.FarbesT")
+              .length > 0
+              ? "Black"
+              : $(row).find(
+                    "td:eq(" + headerKeys.indexOf("Res.") + ") div.FarbewT",
+                  ).length > 0
+                ? "White"
+                : "",
           opponentProfileUrl: buildOpponentProfileUrl(url, rowObj["SNo"]),
         };
 
@@ -115,7 +124,6 @@ export async function scrapeChessResults(url) {
     "Year of birth",
   ]);
 
-  // Info rows are in the 5th table (index 4)
   const infoRows = $html.find("table").eq(4).find("tr");
 
   infoRows.each((_, row) => {
@@ -132,10 +140,8 @@ export async function scrapeChessResults(url) {
   return { playerInfo, pairings };
 }
 
-/**
- * Main function to fetch and return variables for all rounds
- */
-export async function getChessResults(url) {
+// Main function to fetch and return variables for all rounds
+async function getChessResults(url) {
   if (!url.includes("chess-results.com")) {
     throw new Error("Please enter a valid Chess-Results URL.");
   }
@@ -143,33 +149,41 @@ export async function getChessResults(url) {
   const { playerInfo, pairings } = await scrapeChessResults(url);
 
   const rating = parseInt(playerInfo["Rating"]);
+  const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(/,/g, "."));
   if (isNaN(rating)) {
     throw new Error("Could not detect your rating from the page.");
   }
-
-  const rtgchgStr = playerInfo["FIDE rtg +/-"]
-    ? playerInfo["FIDE rtg +/-"].replace(/,/g, ".")
-    : "0";
-  const rtgchg = parseFloat(rtgchgStr);
 
   // Calculate rating change info for all rounds
   const rounds = pairings.map((pairing) => {
     const oppRating = pairing.opponentRating;
     return {
-      ...pairing,
+      round: pairing.round,
+      boardNo: pairing.boardNo,
+      playerStartNo: pairing.playerStartNo,
+      opponentTitle: pairing.opponentTitle,
+      opponentName: pairing.opponentName,
+      opponentRating: oppRating,
+      opponentFederation: pairing.opponentFederation,
+      opponentClub: pairing.opponentClub,
       opponentPoints: pairing.opponentPoints
         .replace(/,5/g, "&#189;")
         .replace(/0&#189;/g, "&#189;"),
+      result: pairing.result,
+      playerColor: pairing.playerColor,
+      opponentProfileUrl: pairing.opponentProfileUrl,
       win:
         calcChange(rating, oppRating, 1) === ""
           ? ""
           : (calcChange(rating, oppRating, 1) >= 0 ? "+" : "-") +
             Math.abs(calcChange(rating, oppRating, 1)),
+
       draw:
         calcChange(rating, oppRating, 0.5) === ""
           ? ""
           : (calcChange(rating, oppRating, 0.5) >= 0 ? "+" : "-") +
             Math.abs(calcChange(rating, oppRating, 0.5)),
+
       loss:
         calcChange(rating, oppRating, 0) === ""
           ? ""
@@ -178,24 +192,21 @@ export async function getChessResults(url) {
     };
   });
 
-  return { playerInfo, rating, rtgchg, rounds };
+  return {
+    playerInfo,
+    rating,
+    rtgchg,
+    rounds,
+  };
 }
 
-/**
- * Render rounds data into #pairings-table in the required format
- */
-export function renderPairingsTable(rounds, playerName, playerRating, url) {
-  const $tableContainer = $("#pairings-table");
-  if ($tableContainer.length === 0) return;
-
+// Render rounds data into #pairings-table in the required format
+function renderPairingsTable(rounds, playerName, playerRating, url) {
   // Show player name and rating above the table
   if (playerName) {
-    let $nameEl = $("#player-name");
-    if ($nameEl.length === 0) {
-      $nameEl = $('<div id="player-name"></div>');
-      $tableContainer.before($nameEl);
+    if ($("#player-name").length === 0) {
+      $("#pairings-table").before('<div id="player-name"></div>');
     }
-
     let displayHtml = "";
     if (url) {
       displayHtml += `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName}</strong></a>`;
@@ -205,15 +216,15 @@ export function renderPairingsTable(rounds, playerName, playerRating, url) {
     if (playerRating) {
       displayHtml += ' <span class="player-rating">' + playerRating + "</span>";
     }
-    $nameEl.html(displayHtml);
+    $("#player-name").html(displayHtml);
   }
-
+  const $table = $("#pairings-table");
   // Check if any round has a federation value
   const hasFederation = rounds.some(
     (r) => r.opponentFederation && r.opponentFederation.trim() !== "",
   );
 
-  // Build table HTML
+  // Build thead only once
   let tableHtml = `
     <table>
       <thead>
@@ -240,6 +251,8 @@ export function renderPairingsTable(rounds, playerName, playerRating, url) {
       colorSpan = '<span class="box-white"></span>';
     }
 
+    let resultDisplay = round.result;
+
     tableHtml += `
       <tr>
         <td>${round.round}</td>
@@ -247,7 +260,11 @@ export function renderPairingsTable(rounds, playerName, playerRating, url) {
         <td>${round.playerStartNo}</td>
         <td>
           <span class="title">${round.opponentTitle}</span>
-          ${round.opponentProfileUrl ? `<a href="${round.opponentProfileUrl}" target="_blank">${round.opponentName}</a>` : round.opponentName}
+          ${
+            round.opponentProfileUrl
+              ? `<a href="${round.opponentProfileUrl}" target="_blank">${round.opponentName}</a>`
+              : round.opponentName
+          }
         </td>
         <td>
         ${
@@ -264,7 +281,7 @@ export function renderPairingsTable(rounds, playerName, playerRating, url) {
         ${hasFederation ? `<td>${round.opponentFederation || ""}</td>` : ""}
         <td>${round.opponentClub}</td>
         <td>${round.opponentPoints}</td>
-        <td class="result-cell">${colorSpan}${round.result ? `<span>${round.result}</span>` : ""}</td>
+        <td class="result-cell">${colorSpan}${resultDisplay ? `<span>${resultDisplay}</span>` : ""}</td>
       </tr>
     `;
   });
@@ -277,43 +294,47 @@ export function renderPairingsTable(rounds, playerName, playerRating, url) {
     </div>
   `;
 
-  $tableContainer.html(tableHtml);
+  $table.html(tableHtml);
 }
 
-/**
- * Example usage for UI (call this from your form/button event)
- */
-export async function showPairingsTableFromInput() {
-  const $urlInput = $("#url-input");
-  let url = $urlInput.val().trim();
-
+// Example usage for UI (call this from your form/button event)
+async function showPairingsTableFromInput() {
+  let url = $("#url-input").val().trim();
   // Save to localStorage
   if (url) {
-    localStorage.setItem("chessResultsUrl", url);
+    window.localStorage.setItem("chessResultsUrl", url);
   } else {
     // If input is empty, try to load from localStorage
-    url = localStorage.getItem("chessResultsUrl") || "";
-    $urlInput.val(url);
+    const storedUrl = window.localStorage.getItem("chessResultsUrl");
+    if (storedUrl) {
+      url = storedUrl;
+      $("#url-input").val(url);
+    }
   }
-
   if (!url) return;
-
   showLoader("#searchURL span");
   try {
     const data = await getChessResults(url);
-    const playerRating = data.playerInfo?.["Rating international"] || null;
-
+    const playerRating =
+      data.playerInfo && data.playerInfo["Rating international"]
+        ? data.playerInfo["Rating international"]
+        : null;
     renderPairingsTable(
       data.rounds,
-      data.playerInfo?.["Name"],
+      data.playerInfo && data.playerInfo["Name"],
       playerRating,
       url,
+    ); // pass url here
+    // Cache rounds data in localStorage (also cache player name and rating)
+    window.localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
+    window.localStorage.setItem(
+      "pairingsPlayerName",
+      data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "",
     );
-
-    // Cache rounds data in localStorage
-    localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
-    localStorage.setItem("pairingsPlayerName", data.playerInfo?.["Name"] || "");
-    localStorage.setItem("pairingsPlayerRating", playerRating || "");
+    window.localStorage.setItem(
+      "pairingsPlayerRating",
+      playerRating ? playerRating : "",
+    );
     hideLoader("#searchURL span");
   } catch (err) {
     hideLoader("#searchURL span");
@@ -322,40 +343,41 @@ export async function showPairingsTableFromInput() {
   }
 }
 
-/**
- * Initialization Logic
- */
-const initPairings = () => {
+// Optionally, attach to form submit
+$(function () {
   // On page load, fill input from localStorage if available
-  const storedUrl = localStorage.getItem("chessResultsUrl");
+  const storedUrl = window.localStorage.getItem("chessResultsUrl");
   if (storedUrl) {
     $("#url-input").val(storedUrl);
   }
 
   // On page load, restore pairings table if cached
-  const cachedRounds = localStorage.getItem("pairingsRounds");
-  const cachedPlayerName = localStorage.getItem("pairingsPlayerName");
-  const cachedPlayerRating = localStorage.getItem("pairingsPlayerRating");
-  const url = localStorage.getItem("chessResultsUrl");
-
+  const cachedRounds = window.localStorage.getItem("pairingsRounds");
+  const cachedPlayerName = window.localStorage.getItem("pairingsPlayerName");
+  const cachedPlayerRating = window.localStorage.getItem(
+    "pairingsPlayerRating",
+  );
+  const url = window.localStorage.getItem("chessResultsUrl"); // ensure url is available
   if (cachedRounds) {
     try {
       const rounds = JSON.parse(cachedRounds);
-      renderPairingsTable(rounds, cachedPlayerName, cachedPlayerRating, url);
+      renderPairingsTable(rounds, cachedPlayerName, cachedPlayerRating, url); // pass url here
     } catch (e) {
       // If parsing fails, clear the cache
-      localStorage.removeItem("pairingsRounds");
-      localStorage.removeItem("pairingsPlayerName");
-      localStorage.removeItem("pairingsPlayerRating");
+      window.localStorage.removeItem("pairingsRounds");
+      window.localStorage.removeItem("pairingsPlayerName");
+      window.localStorage.removeItem("pairingsPlayerRating");
     }
   }
 
   $("#chess-resultsForm").on("submit", function (e) {
     e.preventDefault();
+    // Removed check that disables repeated submissions
     showPairingsTableFromInput();
   });
-};
+});
 
-// Initialize
-// jQuery is loaded via a separate script tag in the HTML, so it's globally available.
-$(initPairings);
+// Example usage:
+// getChessResults("https://chess-results.com/tnr123456.aspx?lan=1&art=9&snr=1")
+//   .then(res => console.log(JSON.stringify(res, null, 2)))
+//   .catch(err => console.error(err));
