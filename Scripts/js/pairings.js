@@ -347,9 +347,7 @@ function renderPlayerHeader(playerData, url) {
   const { name, title, rank, rating, rtgchg, federation } = playerData;
   if (!name) return;
 
-  if ($("#player-name").length === 0) {
-    $("#pairings-table").before('<div id="player-name"></div>');
-  }
+  $("#player-name").length || $("#pairings-table").before('<div id="player-name"></div>');
 
   const rankHtml = rank ? `<span class="player-rank">#${rank}</span> ` : "";
   const fedHtml = federation
