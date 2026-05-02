@@ -75,7 +75,7 @@ select,
 button {
     padding: 14px 18px;
     background-color: var(--white-container);
-    border: 2px solid var(--white-d);
+    border: 1.5px var(--white-d) solid;
     border-radius: var(--border-radius);
     font-family: "Poppins", sans-serif;
     font-size: var(--small);

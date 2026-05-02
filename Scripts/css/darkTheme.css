@@ -77,7 +77,7 @@ body.dark-theme {
 .dark-theme button {
     background-color: var(--black-2c);
     color: var(--white-e0);
-    border: 2px solid var(--grey-444);
+    border: 1.5px solid var(--grey-444);
 }
 .dark-theme button {
     background-color: var(--orange);

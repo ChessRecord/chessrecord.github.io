@@ -40,7 +40,7 @@
     border-radius: var(--border-radius);
     padding: var(--normal);
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
-    border: 2px var(--white-d) solid;
+    border: 1.5px var(--white-d) solid;
     z-index: 1000;
     animation: slideInAbsolute 0.3s ease-out;
     text-align: center;
