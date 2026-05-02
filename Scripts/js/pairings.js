@@ -6,6 +6,7 @@ const PROXY_URL = "https://proxy.caticuchess.workers.dev/";
 
 const PLAYER_INFO_KEYS = new Set([
   "Name",
+  "Title",
   "Starting rank",
   "Rating",
   "Rating national",
@@ -22,19 +23,18 @@ const PLAYER_INFO_KEYS = new Set([
 ]);
 
 // =============================================================================
-// Storage — centralised localStorage interface
+// Storage — session-scoped cache (cleared automatically when the tab closes)
 // =============================================================================
 
 const Storage = {
   KEYS: {
     url: "chessResultsUrl",
     rounds: "pairingsRounds",
-    playerName: "pairingsPlayerName",
-    playerRating: "pairingsPlayerRating",
+    playerData: "pairingsPlayerData",
   },
 
   get(key) {
-    return localStorage.getItem(this.KEYS[key]);
+    return sessionStorage.getItem(this.KEYS[key]);
   },
 
   getJSON(key) {
@@ -46,14 +46,14 @@ const Storage = {
   },
 
   set(key, value) {
-    localStorage.setItem(
+    sessionStorage.setItem(
       this.KEYS[key],
       typeof value === "object" ? JSON.stringify(value) : String(value ?? ""),
     );
   },
 
   clear(...keys) {
-    keys.forEach((k) => localStorage.removeItem(this.KEYS[k]));
+    keys.forEach((k) => sessionStorage.removeItem(this.KEYS[k]));
   },
 };
 
@@ -338,27 +338,49 @@ const PAIRINGS_COLUMNS = [
   },
 ];
 
-/** Renders (or updates) the player name / rating header above the table. */
-function renderPlayerHeader(playerName, playerRating, url) {
-  if (!playerName) return;
+/**
+ * Renders (or updates) the player header above the table.
+ * Format: #[Rank] <Title> [Name] [New Rating] [Federation]
+ * New rating is derived by applying the FIDE rtg +/- to the base rating.
+ */
+function renderPlayerHeader(playerData, url) {
+  const { name, title, rank, rating, rtgchg, federation } = playerData;
+  if (!name) return;
+
   if ($("#player-name").length === 0) {
     $("#pairings-table").before('<div id="player-name"></div>');
   }
-  const nameHtml = url
-    ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName}</strong></a>`
-    : `<strong>${playerName}</strong>`;
-  const ratingHtml = playerRating
-    ? ` <span class="player-rating">${playerRating}</span>`
+
+  const rankHtml = rank ? `<span class="player-rank">#${rank}</span> ` : "";
+  const titleHtml = title ? `<span class="title">${title}</span> ` : "";
+  const fedHtml = federation
+    ? ` <span class="player-federation">${federation}</span>`
     : "";
-  $("#player-name").html(nameHtml + ratingHtml);
+
+  let ratingHtml = "";
+  if (Number.isFinite(rating)) {
+    const changeStr =
+      Number.isFinite(rtgchg) && rtgchg !== 0
+        ? ` <span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>`
+        : "";
+    ratingHtml = ` <span class="player-rating">${rating}</span>${changeStr}`;
+  }
+
+  const nameHtml = url
+    ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${name}</strong></a>`
+    : `<strong>${name}</strong>`;
+
+  $("#player-name").html(
+    `${rankHtml}${titleHtml}${nameHtml}${ratingHtml}${fedHtml}`,
+  );
 }
 
 /**
  * Renders the pairings table into #pairings-table.
  * Any column whose values are absent across every round is omitted.
  */
-function renderPairingsTable(rounds, playerName, playerRating, url) {
-  renderPlayerHeader(playerName, playerRating, url);
+function renderPairingsTable(rounds, playerData, url) {
+  renderPlayerHeader(playerData, url);
 
   const visible = PAIRINGS_COLUMNS.filter((col) =>
     rounds.some((r) => col.isPresent(r)),
@@ -380,16 +402,16 @@ function renderPairingsTable(rounds, playerName, playerRating, url) {
 // =============================================================================
 
 /**
- * Resolves the URL from the input field or localStorage, fetches results,
- * renders the table, and updates the cache.
+ * Resolves the URL from the input field or session cache, fetches results,
+ * renders the table, and updates the cache — all three atomically on success.
+ * The URL is never persisted until a fetch fully succeeds, so a failed request
+ * can never leave the cache in a state where the URL points to different data.
  * The loader is always dismissed on exit, whether the fetch succeeds or fails.
  */
 async function showPairingsTableFromInput() {
   let url = $("#url-input").val().trim();
 
-  if (url) {
-    Storage.set("url", url);
-  } else {
+  if (!url) {
     url = Storage.get("url") ?? "";
     if (url) $("#url-input").val(url);
   }
@@ -397,15 +419,24 @@ async function showPairingsTableFromInput() {
 
   showLoader("#searchURL span");
   try {
-    const { playerInfo, rounds } = await getChessResults(url);
-    const playerName = playerInfo["Name"] ?? "";
-    const playerRating = playerInfo["Rating international"] ?? null;
+    const { playerInfo, rating, rtgchg, rounds } = await getChessResults(url);
 
-    renderPairingsTable(rounds, playerName, playerRating, url);
+    const playerData = {
+      url, // embedded for integrity check on restore
+      name: playerInfo["Name"] ?? "",
+      title: playerInfo["Title"] ?? "",
+      rank: playerInfo["Rank"] ?? "",
+      rating,
+      rtgchg,
+      federation: playerInfo["Federation"] ?? "",
+    };
 
+    renderPairingsTable(rounds, playerData, url);
+
+    // All three writes happen together — only after a successful fetch.
+    Storage.set("url", url);
     Storage.set("rounds", rounds);
-    Storage.set("playerName", playerName);
-    Storage.set("playerRating", playerRating ?? "");
+    Storage.set("playerData", playerData);
   } catch (err) {
     alert("No Pairings found for this URL.");
     console.error(err);
@@ -415,19 +446,17 @@ async function showPairingsTableFromInput() {
 }
 
 $(function () {
-  // Restore URL input from cache
+  // Restore last rendered table from cache only when all three keys are present
+  // and the URL embedded in playerData matches the stored URL, ensuring the
+  // rounds and player header always belong to the same fetch.
   const storedUrl = Storage.get("url");
+  const cachedRounds = Storage.getJSON("rounds");
+  const cachedPlayerData = Storage.getJSON("playerData");
+
   if (storedUrl) $("#url-input").val(storedUrl);
 
-  // Restore last rendered table from cache, if available
-  const cachedRounds = Storage.getJSON("rounds");
-  if (cachedRounds) {
-    renderPairingsTable(
-      cachedRounds,
-      Storage.get("playerName"),
-      Storage.get("playerRating"),
-      storedUrl,
-    );
+  if (cachedRounds && cachedPlayerData && cachedPlayerData.url === storedUrl) {
+    renderPairingsTable(cachedRounds, cachedPlayerData, storedUrl);
   }
 
   $("#chess-resultsForm").on("submit", (e) => {

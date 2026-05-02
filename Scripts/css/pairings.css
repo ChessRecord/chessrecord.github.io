@@ -2,10 +2,21 @@
     margin-bottom: var(--small);
 }
 
+.player-rank {
+    transform: skewX(-10deg);
+    display: inline-block;
+    font-weight: 600;
+}
+
 #player-name {
     margin-bottom: var(--small);
     margin-left: var(--small);
     color: var(--deep-blue);
+}
+
+.player-federation {
+    font-family: "Rubik", sans-serif;
+    font-optical-sizing: auto;
 }
 
 .dark-theme #player-name {

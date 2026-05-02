@@ -206,6 +206,11 @@ span.gap {
     width: 0.5rem;
 }
 
+.tilt {
+    transform: skewX(-10deg);
+    display: inline-block;
+}
+
 /* Animations */
 @keyframes slideIn {
     from {
