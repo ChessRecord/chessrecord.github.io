@@ -23,12 +23,33 @@ const PLAYER_INFO_KEYS = new Set([
 ]);
 
 // =============================================================================
-// Storage — session-scoped cache (cleared automatically when the tab closes)
+// Storage
+//
+// Two scopes, one interface each:
+//   PersistentStorage — localStorage, survives tab/browser close.
+//                       Used only for the URL so the input is pre-filled on
+//                       every future visit.
+//   SessionStorage    — sessionStorage, cleared when the tab closes.
+//                       Used for rounds and playerData; always re-fetched on
+//                       page load so the data is never stale.
 // =============================================================================
 
-const Storage = {
+const PersistentStorage = {
+  KEY: "chessResultsUrl",
+
+  get() {
+    return localStorage.getItem(this.KEY);
+  },
+  set(value) {
+    localStorage.setItem(this.KEY, String(value ?? ""));
+  },
+  clear() {
+    localStorage.removeItem(this.KEY);
+  },
+};
+
+const SessionStorage = {
   KEYS: {
-    url: "chessResultsUrl",
     rounds: "pairingsRounds",
     playerData: "pairingsPlayerData",
   },
@@ -415,7 +436,7 @@ async function showPairingsTableFromInput() {
   let url = $("#url-input").val().trim();
 
   if (!url) {
-    url = Storage.get("url") ?? "";
+    url = PersistentStorage.get() ?? "";
     if (url) $("#url-input").val(url);
   }
   if (!url) return;
@@ -436,10 +457,12 @@ async function showPairingsTableFromInput() {
 
     renderPairingsTable(rounds, playerData, url);
 
-    // All three writes happen together — only after a successful fetch.
-    Storage.set("url", url);
-    Storage.set("rounds", rounds);
-    Storage.set("playerData", playerData);
+    // URL persisted to localStorage — survives page close.
+    // Rounds and playerData written to sessionStorage — volatile.
+    // All writes happen together, only after a successful fetch.
+    PersistentStorage.set(url);
+    SessionStorage.set("rounds", rounds);
+    SessionStorage.set("playerData", playerData);
   } catch (err) {
     alert("No Pairings found for this URL.");
     console.error(err);
@@ -449,17 +472,13 @@ async function showPairingsTableFromInput() {
 }
 
 $(function () {
-  // Restore last rendered table from cache only when all three keys are present
-  // and the URL embedded in playerData matches the stored URL, ensuring the
-  // rounds and player header always belong to the same fetch.
-  const storedUrl = Storage.get("url");
-  const cachedRounds = Storage.getJSON("rounds");
-  const cachedPlayerData = Storage.getJSON("playerData");
-
-  if (storedUrl) $("#url-input").val(storedUrl);
-
-  if (cachedRounds && cachedPlayerData && cachedPlayerData.url === storedUrl) {
-    renderPairingsTable(cachedRounds, cachedPlayerData, storedUrl);
+  // Restore the URL input from localStorage (persistent across sessions).
+  // Rounds are never restored from cache — always re-fetched on page load
+  // so the data is guaranteed to be current.
+  const storedUrl = PersistentStorage.get();
+  if (storedUrl) {
+    $("#url-input").val(storedUrl);
+    showPairingsTableFromInput();
   }
 
   $("#chess-resultsForm").on("submit", (e) => {
