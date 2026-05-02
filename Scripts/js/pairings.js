@@ -1,146 +1,218 @@
-async function scrapeChessResults(url) {
-  const proxy = "https://proxy.caticuchess.workers.dev/";
-  const fullUrl = proxy + url;
+// =============================================================================
+// Constants
+// =============================================================================
 
-  const response = await fetch(fullUrl);
-  const htmlText = await response.text();
+const PROXY_URL = "https://proxy.caticuchess.workers.dev/";
 
-  const $html = $("<div>").html(htmlText);
+const PLAYER_INFO_KEYS = new Set([
+  "Name",
+  "Starting rank",
+  "Rating",
+  "Rating national",
+  "Rating international",
+  "Performance rating",
+  "FIDE rtg +/-",
+  "Points",
+  "Rank",
+  "Federation",
+  "Club/City",
+  "Ident-Number",
+  "Fide-ID",
+  "Year of birth",
+]);
+
+// =============================================================================
+// Storage — centralised localStorage interface
+// =============================================================================
+
+const Storage = {
+  KEYS: {
+    url: "chessResultsUrl",
+    rounds: "pairingsRounds",
+    playerName: "pairingsPlayerName",
+    playerRating: "pairingsPlayerRating",
+  },
+
+  get(key) {
+    return localStorage.getItem(this.KEYS[key]);
+  },
+
+  getJSON(key) {
+    try {
+      return JSON.parse(this.get(key));
+    } catch {
+      return null;
+    }
+  },
+
+  set(key, value) {
+    localStorage.setItem(
+      this.KEYS[key],
+      typeof value === "object" ? JSON.stringify(value) : String(value ?? ""),
+    );
+  },
+
+  clear(...keys) {
+    keys.forEach((k) => localStorage.removeItem(this.KEYS[k]));
+  },
+};
+
+// =============================================================================
+// Utilities
+// =============================================================================
+
+/** True when a value is non-null, non-undefined, non-empty-string, and non-zero. */
+function hasValue(v) {
+  return v !== null && v !== undefined && v !== "" && v !== 0;
+}
+
+/**
+ * Builds a chess-results.com profile URL for a given start number by
+ * replacing the `snr` query parameter in the source URL.
+ */
+function buildOpponentProfileUrl(baseUrl, startNo) {
+  const n = Number(startNo);
+  if (!baseUrl || !startNo || isNaN(n)) return null;
+
+  try {
+    const u = new URL(baseUrl);
+    u.searchParams.set("snr", String(n));
+    return u.toString();
+  } catch {
+    if (typeof baseUrl !== "string") return null;
+    const snr = encodeURIComponent(String(n));
+    if (baseUrl.includes("snr="))
+      return baseUrl.replace(/([?&]snr=)[^&]*/, "$1" + snr);
+    return baseUrl + (baseUrl.includes("?") ? "&" : "?") + "snr=" + snr;
+  }
+}
+
+/**
+ * Formats a projected rating change as "+N" or "-N".
+ * Returns "" when calcChange signals the result is indeterminate.
+ * score: 1 = win, 0.5 = draw, 0 = loss.
+ */
+function formatRatingDelta(playerRating, oppRating, score) {
+  const delta = calcChange(playerRating, oppRating, score);
+  if (delta === "") return "";
+  return (delta >= 0 ? "+" : "") + delta;
+}
+
+/**
+ * Normalises fractional-point notation from the server format
+ * (e.g. "1,5" → "1½", "0,5" → "½").
+ */
+function normalisePoints(raw) {
+  return raw.replace(/,5/g, "&#189;").replace(/0&#189;/g, "&#189;");
+}
+
+// =============================================================================
+// Data acquisition
+// =============================================================================
+
+/** Fetches raw HTML through the CORS proxy and returns it as a string. */
+async function fetchPage(url) {
+  const res = await fetch(PROXY_URL + url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching page.`);
+  return res.text();
+}
+
+/**
+ * Extracts player metadata from the info table (index 4).
+ * Only known keys defined in PLAYER_INFO_KEYS are retained.
+ */
+function parsePlayerInfo($html) {
+  const info = {};
+  $html
+    .find("table")
+    .eq(4)
+    .find("tr")
+    .each((_, row) => {
+      const cells = $(row).find("td");
+      if (cells.length < 2) return;
+      const key = $(cells[0]).text().trim().replace(/:$/, "");
+      if (PLAYER_INFO_KEYS.has(key)) info[key] = $(cells[1]).text().trim();
+    });
+  return info;
+}
+
+/**
+ * Extracts all pairings from the results table (index 5).
+ * Column positions are derived dynamically from the <th> headers so the
+ * parser adapts automatically to any column ordering the server returns.
+ */
+function parsePairings($html, url) {
   const table = $html.find("table").eq(5);
   const rows = table.find("tr");
 
-  // Extract header keys from <th>
-  const headerCells = table.find("tr").first().find("th");
-  let headerKeys = headerCells
-    .map((_, th) => {
-      const txt = $(th).text().trim();
-      return txt === "" ? "Title" : txt;
-    })
+  // Map header labels; empty <th> cells are the title column
+  const headers = table
+    .find("tr")
+    .first()
+    .find("th")
+    .map((_, th) => $(th).text().trim() || "Title")
     .get();
 
-  // Map header keys to normalized property names
-  const keyMap = {
-    "Rd.": "round",
-    "Bo.": "boardNo",
-    SNo: "playerStartNo",
-    Title: "opponentTitle",
-    Name: "opponentName",
-    Rtg: "opponentRating",
-    FED: "opponentFederation",
-    "Club/City": "opponentClub",
-    "Pts.": "opponentPoints",
-    "Res.": "result",
-  };
-
-  // Helper to build opponent profile URL by replacing snr in the original url
-  function buildOpponentProfileUrl(baseUrl, opponentStartNo) {
-    if (!baseUrl || !opponentStartNo || isNaN(Number(opponentStartNo)))
-      return null;
-    try {
-      const urlObj = new URL(baseUrl);
-      urlObj.searchParams.set("snr", String(Number(opponentStartNo)));
-      return urlObj.toString();
-    } catch {
-      if (typeof baseUrl === "string") {
-        const snr = encodeURIComponent(String(Number(opponentStartNo)));
-        if (baseUrl.includes("snr=")) {
-          return baseUrl.replace(/([?&]snr=)[^&]*/, "$1" + snr);
-        } else if (baseUrl.includes("?")) {
-          return baseUrl + "&snr=" + snr;
-        } else {
-          return baseUrl + "?snr=" + snr;
-        }
-      }
-      return null;
-    }
-  }
+  const resultIdx = headers.indexOf("Res.");
 
   const pairings = [];
 
   rows.each((i, row) => {
-    // Skip header row
-    if (i === 0) return;
-    // Only process odd rows (as before)
-    if (i % 2 === 1) {
-      const cells = $(row)
-        .find("td")
-        .map((_, cell) => $(cell).text().trim())
-        .get();
+    // Skip the header row and the interleaved blank rows
+    if (i === 0 || i % 2 === 0) return;
 
-      if (cells.length >= headerKeys.length) {
-        // Build a mapping of headerKey -> cell value
-        const rowObj = {};
-        headerKeys.forEach((key, idx) => {
-          rowObj[key] = cells[idx];
-        });
+    const cells = $(row)
+      .find("td")
+      .map((_, td) => $(td).text().trim())
+      .get();
+    if (cells.length < headers.length) return;
 
-        const nameCell = $(row).find("td").eq(headerKeys.indexOf("Name"));
-        const nameLink = nameCell.find("a").attr("href");
+    // Index cell values by their column header for readable access below
+    const col = Object.fromEntries(headers.map((k, idx) => [k, cells[idx]]));
 
-        // Compose pairing object using mapped keys
-        const pairing = {
-          round: rowObj["Rd."],
-          boardNo: rowObj["Bo."],
-          playerStartNo: rowObj["SNo"],
-          opponentTitle: rowObj["Title"],
-          opponentName: rowObj["Name"],
-          opponentRating: parseInt(rowObj["Rtg"]) || 0,
-          opponentFederation: rowObj["FED"],
-          opponentClub: rowObj["Club/City"],
-          opponentPoints: rowObj["Pts."],
-          result: rowObj["Res."],
-          playerColor:
-            $(row).find("td:eq(" + headerKeys.indexOf("Res.") + ") div.FarbesT")
-              .length > 0
-              ? "Black"
-              : $(row).find(
-                    "td:eq(" + headerKeys.indexOf("Res.") + ") div.FarbewT",
-                  ).length > 0
-                ? "White"
-                : "",
-          opponentProfileUrl: buildOpponentProfileUrl(url, rowObj["SNo"]),
-        };
+    const $resultCell = $(row).find(`td:eq(${resultIdx})`);
+    const playerColor = $resultCell.find("div.FarbesT").length
+      ? "Black"
+      : $resultCell.find("div.FarbewT").length
+        ? "White"
+        : "";
 
-        pairings.push(pairing);
-      }
-    }
+    pairings.push({
+      round: col["Rd."],
+      boardNo: col["Bo."],
+      playerStartNo: col["SNo"],
+      opponentTitle: col["Title"],
+      opponentName: col["Name"],
+      opponentRating: parseInt(col["Rtg"]) || 0,
+      opponentFederation: col["FED"],
+      opponentClub: col["Club/City"],
+      opponentPoints: col["Pts."],
+      result: col["Res."],
+      playerColor,
+      opponentProfileUrl: buildOpponentProfileUrl(url, col["SNo"]),
+    });
   });
 
-  const playerInfo = {};
-  const knownKeys = new Set([
-    "Name",
-    "Starting rank",
-    "Rating",
-    "Rating national",
-    "Rating international",
-    "Performance rating",
-    "FIDE rtg +/-",
-    "Points",
-    "Rank",
-    "Federation",
-    "Club/City",
-    "Ident-Number",
-    "Fide-ID",
-    "Year of birth",
-  ]);
-
-  const infoRows = $html.find("table").eq(4).find("tr");
-
-  infoRows.each((_, row) => {
-    const cells = $(row).find("td");
-    if (cells.length >= 2) {
-      const key = $(cells[0]).text().trim().replace(/:$/, "");
-      const value = $(cells[1]).text().trim();
-      if (knownKeys.has(key)) {
-        playerInfo[key] = value;
-      }
-    }
-  });
-
-  return { playerInfo, pairings };
+  return pairings;
 }
 
-// Main function to fetch and return variables for all rounds
+/** Fetches and parses a chess-results.com player page. */
+async function scrapeChessResults(url) {
+  const $html = $("<div>").html(await fetchPage(url));
+  return {
+    playerInfo: parsePlayerInfo($html),
+    pairings: parsePairings($html, url),
+  };
+}
+
+// =============================================================================
+// Data transformation
+// =============================================================================
+
+/**
+ * Fetches, parses, and enriches a player's results page.
+ * Each round is extended with projected rating deltas for win, draw, and loss.
+ */
 async function getChessResults(url) {
   if (!url.includes("chess-results.com")) {
     throw new Error("Please enter a valid Chess-Results URL.");
@@ -149,235 +221,217 @@ async function getChessResults(url) {
   const { playerInfo, pairings } = await scrapeChessResults(url);
 
   const rating = parseInt(playerInfo["Rating"]);
-  const rtgchg = parseFloat(playerInfo["FIDE rtg +/-"].replace(/,/g, "."));
-  if (isNaN(rating)) {
+  if (isNaN(rating))
     throw new Error("Could not detect your rating from the page.");
-  }
 
-  // Calculate rating change info for all rounds
-  const rounds = pairings.map((pairing) => {
-    const oppRating = pairing.opponentRating;
-    return {
-      round: pairing.round,
-      boardNo: pairing.boardNo,
-      playerStartNo: pairing.playerStartNo,
-      opponentTitle: pairing.opponentTitle,
-      opponentName: pairing.opponentName,
-      opponentRating: oppRating,
-      opponentFederation: pairing.opponentFederation,
-      opponentClub: pairing.opponentClub,
-      opponentPoints: pairing.opponentPoints
-        .replace(/,5/g, "&#189;")
-        .replace(/0&#189;/g, "&#189;"),
-      result: pairing.result,
-      playerColor: pairing.playerColor,
-      opponentProfileUrl: pairing.opponentProfileUrl,
-      win:
-        calcChange(rating, oppRating, 1) === ""
-          ? ""
-          : (calcChange(rating, oppRating, 1) >= 0 ? "+" : "-") +
-            Math.abs(calcChange(rating, oppRating, 1)),
-
-      draw:
-        calcChange(rating, oppRating, 0.5) === ""
-          ? ""
-          : (calcChange(rating, oppRating, 0.5) >= 0 ? "+" : "-") +
-            Math.abs(calcChange(rating, oppRating, 0.5)),
-
-      loss:
-        calcChange(rating, oppRating, 0) === ""
-          ? ""
-          : (calcChange(rating, oppRating, 0) >= 0 ? "+" : "-") +
-            Math.abs(calcChange(rating, oppRating, 0)),
-    };
-  });
-
-  return {
-    playerInfo,
-    rating,
-    rtgchg,
-    rounds,
-  };
-}
-
-// Render rounds data into #pairings-table in the required format
-function renderPairingsTable(rounds, playerName, playerRating, url) {
-  // Show player name and rating above the table
-  if (playerName) {
-    if ($("#player-name").length === 0) {
-      $("#pairings-table").before('<div id="player-name"></div>');
-    }
-    let displayHtml = "";
-    if (url) {
-      displayHtml += `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName}</strong></a>`;
-    } else {
-      displayHtml += "<strong>" + playerName + "</strong>";
-    }
-    if (playerRating) {
-      displayHtml += ' <span class="player-rating">' + playerRating + "</span>";
-    }
-    $("#player-name").html(displayHtml);
-  }
-  const $table = $("#pairings-table");
-  // Check if any round has a federation value
-  const hasFederation = rounds.some(
-    (r) => r.opponentFederation && r.opponentFederation.trim() !== "",
+  const rtgchg = parseFloat(
+    (playerInfo["FIDE rtg +/-"] ?? "0").replace(/,/g, "."),
   );
 
-  // Build thead only once
-  let tableHtml = `
-    <table>
-      <thead>
-        <tr>
-          <th>Round</th>
-          <th>Board</th>
-          <th>Start</th>
-          <th>Name</th>
-          <th>Rating</th>
-          ${hasFederation ? "<th>Federation</th>" : ""}
-          <th>Club/City</th>
-          <th>Points</th>
-          <th>Result</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
+  const rounds = pairings.map((p) => ({
+    round: p.round,
+    boardNo: p.boardNo,
+    playerStartNo: p.playerStartNo,
+    opponentTitle: p.opponentTitle,
+    opponentName: p.opponentName,
+    opponentRating: p.opponentRating,
+    opponentFederation: p.opponentFederation,
+    opponentClub: p.opponentClub,
+    opponentPoints: normalisePoints(p.opponentPoints),
+    result: p.result,
+    playerColor: p.playerColor,
+    opponentProfileUrl: p.opponentProfileUrl,
+    win: formatRatingDelta(rating, p.opponentRating, 1),
+    draw: formatRatingDelta(rating, p.opponentRating, 0.5),
+    loss: formatRatingDelta(rating, p.opponentRating, 0),
+  }));
 
-  rounds.forEach((round) => {
-    let colorSpan = "";
-    if (round.playerColor === "Black") {
-      colorSpan = '<span class="box-black"></span>';
-    } else if (round.playerColor === "White") {
-      colorSpan = '<span class="box-white"></span>';
-    }
-
-    let resultDisplay = round.result;
-
-    tableHtml += `
-      <tr>
-        <td>${round.round}</td>
-        <td>${round.boardNo}</td>
-        <td>${round.playerStartNo}</td>
-        <td>
-          <span class="title">${round.opponentTitle}</span>
-          ${
-            round.opponentProfileUrl
-              ? `<a href="${round.opponentProfileUrl}" target="_blank">${round.opponentName}</a>`
-              : round.opponentName
-          }
-        </td>
-        <td>
-        ${
-          round.opponentRating !== 0
-            ? `<span class="tooltip" style="height: 100%;width: 100%;">
-                ${round.opponentRating}
-                <span class="tooltiptext">
-                  Win: ${round.win}<br>Draw: ${round.draw}<br>Loss: ${round.loss}
-                </span>
-              </span>`
-            : `${round.opponentRating}`
-        }
-        </td>
-        ${hasFederation ? `<td>${round.opponentFederation || ""}</td>` : ""}
-        <td>${round.opponentClub}</td>
-        <td>${round.opponentPoints}</td>
-        <td class="result-cell">${colorSpan}${resultDisplay ? `<span>${resultDisplay}</span>` : ""}</td>
-      </tr>
-    `;
-  });
-
-  tableHtml += `
-      </tbody>
-    </table>
-    <div class="note">
-      *) Rating difference of more than 400. It was limited to 400.
-    </div>
-  `;
-
-  $table.html(tableHtml);
+  return { playerInfo, rating, rtgchg, rounds };
 }
 
-// Example usage for UI (call this from your form/button event)
+// =============================================================================
+// Presentation
+// =============================================================================
+
+/**
+ * Column definitions for the pairings table.
+ *
+ * Each entry carries:
+ *   header     — the <th> label
+ *   isPresent  — (round) => bool: does this round have data for the column?
+ *   render     — (round) => <td> HTML string
+ *
+ * A column is only included when at least one round returns true from isPresent.
+ */
+const PAIRINGS_COLUMNS = [
+  {
+    header: "Round",
+    isPresent: (r) => hasValue(r.round),
+    render: (r) => `<td>${r.round}</td>`,
+  },
+  {
+    header: "Board",
+    isPresent: (r) => hasValue(r.boardNo),
+    render: (r) => `<td>${r.boardNo}</td>`,
+  },
+  {
+    header: "Start",
+    isPresent: (r) => hasValue(r.playerStartNo),
+    render: (r) => `<td>${r.playerStartNo}</td>`,
+  },
+  {
+    header: "Name",
+    isPresent: (r) => hasValue(r.opponentName),
+    render: (r) => `<td>
+      <span class="title">${r.opponentTitle || ""}</span>
+      ${
+        r.opponentProfileUrl
+          ? `<a href="${r.opponentProfileUrl}" target="_blank">${r.opponentName}</a>`
+          : r.opponentName
+      }
+    </td>`,
+  },
+  {
+    header: "Rating",
+    isPresent: (r) => hasValue(r.opponentRating),
+    render: (r) =>
+      `<td>${
+        r.opponentRating
+          ? `<span class="tooltip" style="height:100%;width:100%;">
+            ${r.opponentRating}
+            <span class="tooltiptext">
+              Win: ${r.win}<br>Draw: ${r.draw}<br>Loss: ${r.loss}
+            </span>
+          </span>`
+          : r.opponentRating
+      }</td>`,
+  },
+  {
+    header: "Federation",
+    isPresent: (r) =>
+      hasValue(r.opponentFederation) && r.opponentFederation.trim() !== "",
+    render: (r) => `<td>${r.opponentFederation || ""}</td>`,
+  },
+  {
+    header: "Club/City",
+    isPresent: (r) => hasValue(r.opponentClub),
+    render: (r) => `<td>${r.opponentClub}</td>`,
+  },
+  {
+    header: "Points",
+    isPresent: (r) => hasValue(r.opponentPoints),
+    render: (r) => `<td>${r.opponentPoints}</td>`,
+  },
+  {
+    // Result is always rendered; the colour indicator lives inside the cell.
+    header: "Result",
+    isPresent: () => true,
+    render: (r) => {
+      const colorSpan =
+        r.playerColor === "Black"
+          ? '<span class="box-black"></span>'
+          : r.playerColor === "White"
+            ? '<span class="box-white"></span>'
+            : "";
+      return `<td class="result-cell">${colorSpan}${r.result ? `<span>${r.result}</span>` : ""}</td>`;
+    },
+  },
+];
+
+/** Renders (or updates) the player name / rating header above the table. */
+function renderPlayerHeader(playerName, playerRating, url) {
+  if (!playerName) return;
+  if ($("#player-name").length === 0) {
+    $("#pairings-table").before('<div id="player-name"></div>');
+  }
+  const nameHtml = url
+    ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${playerName}</strong></a>`
+    : `<strong>${playerName}</strong>`;
+  const ratingHtml = playerRating
+    ? ` <span class="player-rating">${playerRating}</span>`
+    : "";
+  $("#player-name").html(nameHtml + ratingHtml);
+}
+
+/**
+ * Renders the pairings table into #pairings-table.
+ * Any column whose values are absent across every round is omitted.
+ */
+function renderPairingsTable(rounds, playerName, playerRating, url) {
+  renderPlayerHeader(playerName, playerRating, url);
+
+  const visible = PAIRINGS_COLUMNS.filter((col) =>
+    rounds.some((r) => col.isPresent(r)),
+  );
+
+  const thead = `<thead><tr>${visible.map((c) => `<th>${c.header}</th>`).join("")}</tr></thead>`;
+  const tbody = `<tbody>${rounds
+    .map((r) => `<tr>${visible.map((c) => c.render(r)).join("")}</tr>`)
+    .join("")}</tbody>`;
+
+  $("#pairings-table").html(`
+    <table>${thead}${tbody}</table>
+    <div class="note">*) Rating difference of more than 400. It was limited to 400.</div>
+  `);
+}
+
+// =============================================================================
+// UI controller
+// =============================================================================
+
+/**
+ * Resolves the URL from the input field or localStorage, fetches results,
+ * renders the table, and updates the cache.
+ * The loader is always dismissed on exit, whether the fetch succeeds or fails.
+ */
 async function showPairingsTableFromInput() {
   let url = $("#url-input").val().trim();
-  // Save to localStorage
+
   if (url) {
-    window.localStorage.setItem("chessResultsUrl", url);
+    Storage.set("url", url);
   } else {
-    // If input is empty, try to load from localStorage
-    const storedUrl = window.localStorage.getItem("chessResultsUrl");
-    if (storedUrl) {
-      url = storedUrl;
-      $("#url-input").val(url);
-    }
+    url = Storage.get("url") ?? "";
+    if (url) $("#url-input").val(url);
   }
   if (!url) return;
+
   showLoader("#searchURL span");
   try {
-    const data = await getChessResults(url);
-    const playerRating =
-      data.playerInfo && data.playerInfo["Rating international"]
-        ? data.playerInfo["Rating international"]
-        : null;
-    renderPairingsTable(
-      data.rounds,
-      data.playerInfo && data.playerInfo["Name"],
-      playerRating,
-      url,
-    ); // pass url here
-    // Cache rounds data in localStorage (also cache player name and rating)
-    window.localStorage.setItem("pairingsRounds", JSON.stringify(data.rounds));
-    window.localStorage.setItem(
-      "pairingsPlayerName",
-      data.playerInfo && data.playerInfo["Name"] ? data.playerInfo["Name"] : "",
-    );
-    window.localStorage.setItem(
-      "pairingsPlayerRating",
-      playerRating ? playerRating : "",
-    );
-    hideLoader("#searchURL span");
+    const { playerInfo, rounds } = await getChessResults(url);
+    const playerName = playerInfo["Name"] ?? "";
+    const playerRating = playerInfo["Rating international"] ?? null;
+
+    renderPairingsTable(rounds, playerName, playerRating, url);
+
+    Storage.set("rounds", rounds);
+    Storage.set("playerName", playerName);
+    Storage.set("playerRating", playerRating ?? "");
   } catch (err) {
-    hideLoader("#searchURL span");
     alert("No Pairings found for this URL.");
     console.error(err);
+  } finally {
+    hideLoader("#searchURL span");
   }
 }
 
-// Optionally, attach to form submit
 $(function () {
-  // On page load, fill input from localStorage if available
-  const storedUrl = window.localStorage.getItem("chessResultsUrl");
-  if (storedUrl) {
-    $("#url-input").val(storedUrl);
-  }
+  // Restore URL input from cache
+  const storedUrl = Storage.get("url");
+  if (storedUrl) $("#url-input").val(storedUrl);
 
-  // On page load, restore pairings table if cached
-  const cachedRounds = window.localStorage.getItem("pairingsRounds");
-  const cachedPlayerName = window.localStorage.getItem("pairingsPlayerName");
-  const cachedPlayerRating = window.localStorage.getItem(
-    "pairingsPlayerRating",
-  );
-  const url = window.localStorage.getItem("chessResultsUrl"); // ensure url is available
+  // Restore last rendered table from cache, if available
+  const cachedRounds = Storage.getJSON("rounds");
   if (cachedRounds) {
-    try {
-      const rounds = JSON.parse(cachedRounds);
-      renderPairingsTable(rounds, cachedPlayerName, cachedPlayerRating, url); // pass url here
-    } catch (e) {
-      // If parsing fails, clear the cache
-      window.localStorage.removeItem("pairingsRounds");
-      window.localStorage.removeItem("pairingsPlayerName");
-      window.localStorage.removeItem("pairingsPlayerRating");
-    }
+    renderPairingsTable(
+      cachedRounds,
+      Storage.get("playerName"),
+      Storage.get("playerRating"),
+      storedUrl,
+    );
   }
 
-  $("#chess-resultsForm").on("submit", function (e) {
+  $("#chess-resultsForm").on("submit", (e) => {
     e.preventDefault();
-    // Removed check that disables repeated submissions
     showPairingsTableFromInput();
   });
 });
-
-// Example usage:
-// getChessResults("https://chess-results.com/tnr123456.aspx?lan=1&art=9&snr=1")
-//   .then(res => console.log(JSON.stringify(res, null, 2)))
-//   .catch(err => console.error(err));
