@@ -359,11 +359,14 @@ function renderPlayerHeader(playerData, url) {
 
   let ratingHtml = "";
   if (Number.isFinite(rating)) {
+    const newRating = Math.round(
+      rating + (Number.isFinite(rtgchg) ? rtgchg : 0),
+    );
     const changeStr =
       Number.isFinite(rtgchg) && rtgchg !== 0
-        ? ` <span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>`
+        ? `<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>`
         : "";
-    ratingHtml = ` <span class="player-rating">${rating}</span>${changeStr}`;
+    ratingHtml = ` <span class="player-rating">${newRating} (${changeStr})</span>`;
   }
 
   const nameHtml = url
