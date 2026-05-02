@@ -54,21 +54,33 @@ function normalizePlayer({
 
 async function fetchFidePlayer(id) {
   if (!id || isNaN(id)) throw new Error(`Invalid FIDE ID: ${id}`);
-  const res = await fetch(`${FIDE_BASE}/${id}`);
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = await res.json();
-  if (!data.name) throw new Error(`No player found for FIDE ID: ${id}`);
-  return normalizePlayer(data);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`${FIDE_BASE}/${id}`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+    if (!data.name) throw new Error(`No player found for FIDE ID: ${id}`);
+    return normalizePlayer(data);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-async function fetchPlayerSuggestions(query) {
+// Accepts a signal so the caller can cancel in-flight requests when the query
+// changes. Returns null on abort — callers must check for null before rendering.
+async function fetchPlayerSuggestions(query, signal) {
   try {
     const res = await fetch(
       `${FIDE_BASE}?q=${encodeURIComponent(query.trim())}`,
+      { signal },
     );
     if (!res.ok) throw new Error(`API error ${res.status}`);
     return (await res.json()).map(normalizePlayer);
   } catch (err) {
+    if (err.name === "AbortError") return null; // intentionally cancelled
     console.error("Error fetching player suggestions:", err);
     return [];
   }
@@ -77,11 +89,43 @@ async function fetchPlayerSuggestions(query) {
 /* ─── Rating Helpers ─────────────────────────────────────────────────────── */
 
 function pickRating({ standard = 0, rapid = 0, blitz = 0 } = {}, time) {
+  if (!time?.trim()) return standard;
   return (
     { Classical: standard, Rapid: rapid, Blitz: blitz, Bullet: blitz }[
       getTimeControlCategory(time)
     ] ?? standard
   );
+}
+
+/* ─── Inline Form Error ──────────────────────────────────────────────────── */
+
+// Created once on first use and reused for every subsequent error. Inserted
+// immediately before the submit button so it appears in natural reading order
+// without modifying the HTML.
+let _formErrorEl = null;
+
+function getFormErrorEl() {
+  if (_formErrorEl) return _formErrorEl;
+  _formErrorEl = document.createElement("p");
+  _formErrorEl.setAttribute("role", "alert");
+  _formErrorEl.style.cssText =
+    "color:#c0392b;font-size:.875rem;margin:.25rem 0 0;display:none";
+  document
+    .getElementById("addGame")
+    ?.insertAdjacentElement("beforebegin", _formErrorEl);
+  return _formErrorEl;
+}
+
+function showFormError(msg) {
+  const el = getFormErrorEl();
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function clearFormError() {
+  if (!_formErrorEl) return;
+  _formErrorEl.textContent = "";
+  _formErrorEl.style.display = "none";
 }
 
 /* ─── Autocomplete ───────────────────────────────────────────────────────── */
@@ -98,8 +142,8 @@ function highlightMatch(text, query) {
   );
 }
 
-// Opt 4: One innerHTML assignment for the entire list instead of creating,
-// configuring, and appending a DOM node per player in a loop.
+// Opt 4: Builds the entire list into a DocumentFragment in one pass, then
+// replaces the container's children atomically — no intermediate empty paint.
 function renderSuggestions(container, query, players) {
   const fragment = document.createDocumentFragment();
   players.forEach((p) => {
@@ -115,8 +159,7 @@ function renderSuggestions(container, query, players) {
     div.innerHTML = `${p.title ? `<span class="title">${p.title}</span> ` : ""}${highlightMatch(p.name, query)}`;
     fragment.appendChild(div);
   });
-  container.innerHTML = "";
-  container.appendChild(fragment);
+  container.replaceChildren(fragment);
 }
 
 function setupAutocomplete({ key }) {
@@ -130,11 +173,17 @@ function setupAutocomplete({ key }) {
   } = SIDE_ELS.get(key);
   if (!input || !container || !titleInput) return;
 
+  // Holds the AbortController for the most recent in-flight name suggestions
+  // request. Replaced on every new name query; aborted when the query changes.
+  let nameController = null;
+
   function applyPlayer({ name, title, standard, rapid, blitz }) {
     input.value = name;
     titleInput.value = title;
+    // Mark title as auto-filled so clearSide knows it is safe to wipe.
+    titleInput.dataset.autoFilled = "true";
     Object.assign(input.dataset, { standard, rapid, blitz });
-    container.innerHTML = "";
+    container.replaceChildren();
     // formEls.time is the cached module-level reference — no getElementById here.
     const time = formEls.time?.value.trim();
     if (!ratingEl.dataset.userSet) {
@@ -146,7 +195,12 @@ function setupAutocomplete({ key }) {
     delete input.dataset.standard;
     delete input.dataset.rapid;
     delete input.dataset.blitz;
-    titleInput.value = "";
+    // Only wipe the title if it was auto-filled by autocomplete or FIDE
+    // resolution. If the user typed it manually, leave it untouched.
+    if (titleInput.dataset.autoFilled) {
+      titleInput.value = "";
+      delete titleInput.dataset.autoFilled;
+    }
     if (!ratingEl.dataset.userSet) ratingEl.value = "";
   }
 
@@ -157,25 +211,42 @@ function setupAutocomplete({ key }) {
       applyPlayer(player);
     } catch {
       if (input.value.trim() !== query) return; // stale
-      container.innerHTML =
-        '<div class="autocomplete-suggestion" style="pointer-events:none"><i>FIDE ID not found</i></div>';
+      const errDiv = document.createElement("div");
+      errDiv.className = "autocomplete-suggestion";
+      errDiv.style.pointerEvents = "none";
+      errDiv.innerHTML = "<i>FIDE ID not found</i>";
+      container.replaceChildren(errDiv);
+      // Auto-clear after 2500 ms, but only if this exact bad ID is still typed.
+      setTimeout(() => {
+        if (input.value.trim() === query) container.replaceChildren();
+      }, 2500);
     }
   }
 
   async function onNameQuery(query) {
-    const players = await fetchPlayerSuggestions(query);
+    // Cancel any previous in-flight request for this side before firing a new
+    // one — parallel calls across sides are fine, but serial calls for the same
+    // side are wasteful since only the latest result is ever rendered.
+    nameController?.abort();
+    nameController = new AbortController();
+    const players = await fetchPlayerSuggestions(query, nameController.signal);
+    if (players === null) return; // aborted — a newer query is already in flight
     if (input.value.trim() !== query) return; // stale
     renderSuggestions(container, query, players);
   }
 
   input.addEventListener("input", ({ target }) => {
     const query = target.value.trim();
-    container.innerHTML = "";
+    container.replaceChildren();
     if (!query) {
+      nameController?.abort();
+      nameController = null;
       clearSide();
       return;
     }
     if (isFideId(query)) {
+      nameController?.abort();
+      nameController = null;
       onFideQuery(query);
       return;
     }
@@ -294,6 +365,7 @@ function gameAddedAlert({ whiteTitle, white, blackTitle, black }) {
 //           → persist → reset UI.
 async function addGame(event) {
   event.preventDefault();
+  clearFormError();
   showLoader("#addGame span");
   try {
     // 1. Collect — one DOM pass, raw values (Opt 2)
@@ -301,7 +373,7 @@ async function addGame(event) {
 
     // 2. Validate — cheap string/range checks before any formatting (Opt 3)
     const error = validateState(state);
-    if (error) return alert(error);
+    if (error) return showFormError(error);
 
     // 3. Format — expensive normalization runs only for valid submissions
     const players = formatPlayers(state.players);
@@ -309,7 +381,9 @@ async function addGame(event) {
     // 4. Build  5. Dedupe  6. Persist  7. Reset UI
     const game = buildGame(players, state);
     if (isDuplicate(game))
-      return alert("This game already exists in the database!");
+      return showFormError(
+        "Game already exists or player conflict in this round!",
+      );
     window.games.push(game);
     saveGames();
     event.target.reset();
@@ -348,33 +422,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   gameForm?.addEventListener("reset", () => {
     SIDES.forEach(({ key }) => {
-      const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
+      const {
+        player: playerEl,
+        rating: ratingEl,
+        title: titleEl,
+      } = SIDE_ELS.get(key);
       if (ratingEl) delete ratingEl.dataset.userSet;
       if (playerEl) {
         delete playerEl.dataset.standard;
         delete playerEl.dataset.rapid;
         delete playerEl.dataset.blitz;
       }
+      if (titleEl) delete titleEl.dataset.autoFilled;
     });
+    clearFormError();
   });
 
-  // Opt 5: Single initialization pass combines autocomplete setup and rating
-  // ownership tracking — the two old SIDES.forEach loops become one.
+  // Opt 5: Single initialization pass combines autocomplete setup, rating
+  // ownership tracking, and title ownership tracking.
   SIDES.forEach((side) => {
     setupAutocomplete(side);
 
-    // Inline of the old trackRatingInput: marks the field as user-owned on
-    // any manual edit so auto-fill never clobbers intentional input.
-    const { rating: ratingEl } = SIDE_ELS.get(side.key);
+    const { rating: ratingEl, title: titleEl } = SIDE_ELS.get(side.key);
+
+    // Marks the rating field as user-owned on any manual edit so auto-fill
+    // never clobbers intentional input.
     if (ratingEl) {
       ratingEl.addEventListener("input", () => {
         if (ratingEl.value.trim()) ratingEl.dataset.userSet = "true";
         else delete ratingEl.dataset.userSet;
       });
     }
+
+    // Any manual edit to the title field removes the autoFilled marker so
+    // clearSide knows not to wipe it.
+    if (titleEl) {
+      titleEl.addEventListener("input", () => {
+        delete titleEl.dataset.autoFilled;
+      });
+    }
   });
 
-  // On blur (not input) so ratings recalculate only once the user leaves the time-control field, not on every character typed.
+  // On blur (not input) so ratings recalculate only once the user leaves the
+  // time-control field, not on every character typed.
   formEls.time?.addEventListener("blur", ({ target }) => {
     SIDES.forEach(({ key }) => {
       const { player: playerEl, rating: ratingEl } = SIDE_ELS.get(key);
@@ -387,6 +477,21 @@ document.addEventListener("DOMContentLoaded", () => {
       ratingEl.value = pickRating(cached, target.value) || "";
     });
   });
+
+  // Single passive listener handles outside-click/tap dismissal for all
+  // suggestion containers — covers both mouse and touch (mobile).
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      SIDES.forEach(({ key }) => {
+        const { player, suggestions } = SIDE_ELS.get(key);
+        if (!player?.contains(e.target) && !suggestions?.contains(e.target)) {
+          suggestions?.replaceChildren();
+        }
+      });
+    },
+    { passive: true },
+  );
 });
 
 document.addEventListener("keydown", ({ key }) => {
