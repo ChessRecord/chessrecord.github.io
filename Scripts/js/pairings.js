@@ -25,13 +25,14 @@ const PLAYER_INFO_KEYS = new Set([
 // =============================================================================
 // Storage
 //
-// Two scopes, one interface each:
-//   PersistentStorage — localStorage, survives tab/browser close.
-//                       Used only for the URL so the input is pre-filled on
+// Two scopes with distinct lifetimes:
+//   PersistentStorage — localStorage; survives tab/browser close.
+//                       Holds only the URL so the input is pre-filled on
 //                       every future visit.
-//   SessionStorage    — sessionStorage, cleared when the tab closes.
-//                       Used for rounds and playerData; always re-fetched on
-//                       page load so the data is never stale.
+//   SessionStorage    — sessionStorage; cleared when the tab closes.
+//                       Holds rounds and playerData for instant within-session
+//                       restores. Always verified against a fresh fetch before
+//                       deciding whether to re-render.
 // =============================================================================
 
 const PersistentStorage = {
@@ -164,23 +165,17 @@ function parsePlayerInfo($html) {
  */
 function parsePairings($html, url) {
   const table = $html.find("table").eq(5);
-  const rows = table.find("tr");
-
-  // Map header labels; empty <th> cells are the title column
   const headers = table
     .find("tr")
     .first()
     .find("th")
     .map((_, th) => $(th).text().trim() || "Title")
     .get();
-
   const resultIdx = headers.indexOf("Res.");
-
   const pairings = [];
 
-  rows.each((i, row) => {
-    // Skip the header row and the interleaved blank rows
-    if (i === 0 || i % 2 === 0) return;
+  table.find("tr").each((i, row) => {
+    if (i === 0 || i % 2 === 0) return; // skip header and interleaved blank rows
 
     const cells = $(row)
       .find("td")
@@ -188,15 +183,8 @@ function parsePairings($html, url) {
       .get();
     if (cells.length < headers.length) return;
 
-    // Index cell values by their column header for readable access below
     const col = Object.fromEntries(headers.map((k, idx) => [k, cells[idx]]));
-
     const $resultCell = $(row).find(`td:eq(${resultIdx})`);
-    const playerColor = $resultCell.find("div.FarbesT").length
-      ? "Black"
-      : $resultCell.find("div.FarbewT").length
-        ? "White"
-        : "";
 
     pairings.push({
       round: col["Rd."],
@@ -209,7 +197,11 @@ function parsePairings($html, url) {
       opponentClub: col["Club/City"],
       opponentPoints: col["Pts."],
       result: col["Res."],
-      playerColor,
+      playerColor: $resultCell.find("div.FarbesT").length
+        ? "Black"
+        : $resultCell.find("div.FarbewT").length
+          ? "White"
+          : "",
       opponentProfileUrl: buildOpponentProfileUrl(url, col["SNo"]),
     });
   });
@@ -235,9 +227,8 @@ async function scrapeChessResults(url) {
  * Each round is extended with projected rating deltas for win, draw, and loss.
  */
 async function getChessResults(url) {
-  if (!url.includes("chess-results.com")) {
+  if (!url.includes("chess-results.com"))
     throw new Error("Please enter a valid Chess-Results URL.");
-  }
 
   const { playerInfo, pairings } = await scrapeChessResults(url);
 
@@ -249,25 +240,33 @@ async function getChessResults(url) {
     (playerInfo["FIDE rtg +/-"] ?? "0").replace(/,/g, "."),
   );
 
+  // Spread each raw pairing and override only the three fields that differ:
+  // opponentPoints is normalised and win/draw/loss are computed from ratings.
   const rounds = pairings.map((p) => ({
-    round: p.round,
-    boardNo: p.boardNo,
-    playerStartNo: p.playerStartNo,
-    opponentTitle: p.opponentTitle,
-    opponentName: p.opponentName,
-    opponentRating: p.opponentRating,
-    opponentFederation: p.opponentFederation,
-    opponentClub: p.opponentClub,
+    ...p,
     opponentPoints: normalisePoints(p.opponentPoints),
-    result: p.result,
-    playerColor: p.playerColor,
-    opponentProfileUrl: p.opponentProfileUrl,
     win: formatRatingDelta(rating, p.opponentRating, 1),
     draw: formatRatingDelta(rating, p.opponentRating, 0.5),
     loss: formatRatingDelta(rating, p.opponentRating, 0),
   }));
 
   return { playerInfo, rating, rtgchg, rounds };
+}
+
+/**
+ * Shapes the raw playerInfo map and computed rating fields into the flat
+ * playerData object used by the presentation layer.
+ */
+function buildPlayerData(playerInfo, rating, rtgchg, url) {
+  return {
+    url,
+    name: playerInfo["Name"] ?? "",
+    title: playerInfo["Title"] ?? "",
+    rank: playerInfo["Rank"] ?? "",
+    federation: playerInfo["Federation"] ?? "",
+    rating,
+    rtgchg,
+  };
 }
 
 // =============================================================================
@@ -319,12 +318,12 @@ const PAIRINGS_COLUMNS = [
       `<td>${
         r.opponentRating
           ? `<span class="tooltip" style="height:100%;width:100%;">
-            ${r.opponentRating}
-            <span class="tooltiptext">
-              Win: ${r.win}<br>Draw: ${r.draw}<br>Loss: ${r.loss}
-            </span>
-          </span>`
-          : r.opponentRating
+          ${r.opponentRating}
+          <span class="tooltiptext">
+            Win: ${r.win}<br>Draw: ${r.draw}<br>Loss: ${r.loss}
+          </span>
+        </span>`
+          : "0"
       }</td>`,
   },
   {
@@ -361,22 +360,24 @@ const PAIRINGS_COLUMNS = [
 
 /**
  * Renders (or updates) the player header above the table.
- * Format: #[Rank] <Title> [Name] [New Rating] [Federation]
- * New rating is derived by applying the FIDE rtg +/- to the base rating.
+ * Format: #[Rank] [Federation] <Title> [Name] [New Rating] ([rtgchg])
  */
 function renderPlayerHeader(playerData, url) {
   const { name, title, rank, rating, rtgchg, federation } = playerData;
   if (!name) return;
 
-  if ($("#player-name").length === 0) {
+  $("#player-name").length ||
     $("#pairings-table").before('<div id="player-name"></div>');
-  }
 
   const rankHtml = rank ? `<span class="player-rank">#${rank}</span> ` : "";
   const fedHtml = federation
     ? ` <span class="player-federation">${federation}</span> `
     : "";
   const titleHtml = title ? `<span class="title">${title}</span> ` : "";
+
+  const nameHtml = url
+    ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${name}</strong></a>`
+    : `<strong>${name}</strong>`;
 
   let ratingHtml = "";
   if (Number.isFinite(rating)) {
@@ -389,10 +390,6 @@ function renderPlayerHeader(playerData, url) {
         : "";
     ratingHtml = ` <span class="player-rating">${newRating} ${changeStr}</span>`;
   }
-
-  const nameHtml = url
-    ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${name}</strong></a>`
-    : `<strong>${name}</strong>`;
 
   $("#player-name").html(
     `${rankHtml}${fedHtml}${titleHtml}${nameHtml}${ratingHtml}`,
@@ -409,7 +406,6 @@ function renderPairingsTable(rounds, playerData, url) {
   const visible = PAIRINGS_COLUMNS.filter((col) =>
     rounds.some((r) => col.isPresent(r)),
   );
-
   const thead = `<thead><tr>${visible.map((c) => `<th>${c.header}</th>`).join("")}</tr></thead>`;
   const tbody = `<tbody>${rounds
     .map((r) => `<tr>${visible.map((c) => c.render(r)).join("")}</tr>`)
@@ -426,10 +422,14 @@ function renderPairingsTable(rounds, playerData, url) {
 // =============================================================================
 
 /**
- * Resolves the URL from the input field or session cache, fetches results,
- * renders the table, and updates the cache — all three atomically on success.
- * The URL is never persisted until a fetch fully succeeds, so a failed request
- * can never leave the cache in a state where the URL points to different data.
+ * Resolves the URL from the input field or persistent cache, fetches live
+ * results, and updates the table only when the data has changed.
+ *
+ * If the freshly fetched rounds are byte-for-byte identical to what is already
+ * in the session cache the DOM is left untouched — no flicker, no redundant
+ * repaint. When data differs, or when there is no cache yet, both the table
+ * and the session cache are updated.
+ *
  * The loader is always dismissed on exit, whether the fetch succeeds or fails.
  */
 async function showPairingsTableFromInput() {
@@ -444,25 +444,16 @@ async function showPairingsTableFromInput() {
   showLoader("#searchURL span");
   try {
     const { playerInfo, rating, rtgchg, rounds } = await getChessResults(url);
+    const playerData = buildPlayerData(playerInfo, rating, rtgchg, url);
+    const liveRoundsJSON = JSON.stringify(rounds);
 
-    const playerData = {
-      url, // embedded for integrity check on restore
-      name: playerInfo["Name"] ?? "",
-      title: playerInfo["Title"] ?? "",
-      rank: playerInfo["Rank"] ?? "",
-      rating,
-      rtgchg,
-      federation: playerInfo["Federation"] ?? "",
-    };
+    if (liveRoundsJSON !== SessionStorage.get("rounds")) {
+      renderPairingsTable(rounds, playerData, url);
+      SessionStorage.set("rounds", rounds);
+      SessionStorage.set("playerData", playerData);
+    }
 
-    renderPairingsTable(rounds, playerData, url);
-
-    // URL persisted to localStorage — survives page close.
-    // Rounds and playerData written to sessionStorage — volatile.
-    // All writes happen together, only after a successful fetch.
-    PersistentStorage.set(url);
-    SessionStorage.set("rounds", rounds);
-    SessionStorage.set("playerData", playerData);
+    PersistentStorage.set(url); // always persisted on a successful fetch
   } catch (err) {
     alert("No Pairings found for this URL.");
     console.error(err);
@@ -472,14 +463,19 @@ async function showPairingsTableFromInput() {
 }
 
 $(function () {
-  // Restore the URL input from localStorage (persistent across sessions).
-  // Rounds are never restored from cache — always re-fetched on page load
-  // so the data is guaranteed to be current.
   const storedUrl = PersistentStorage.get();
-  if (storedUrl) {
-    $("#url-input").val(storedUrl);
-    showPairingsTableFromInput();
-  }
+  const cachedRounds = SessionStorage.getJSON("rounds");
+  const cachedPlayerData = SessionStorage.getJSON("playerData");
+
+  if (storedUrl) $("#url-input").val(storedUrl);
+
+  // Restore from session cache immediately for an instant render, then fetch
+  // live data in the background. The table is only re-rendered if the fresh
+  // data differs from the cache.
+  if (cachedRounds && cachedPlayerData && cachedPlayerData.url === storedUrl)
+    renderPairingsTable(cachedRounds, cachedPlayerData, storedUrl);
+
+  if (storedUrl) showPairingsTableFromInput();
 
   $("#chess-resultsForm").on("submit", (e) => {
     e.preventDefault();
