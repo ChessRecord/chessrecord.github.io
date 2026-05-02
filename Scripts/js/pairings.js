@@ -352,10 +352,10 @@ function renderPlayerHeader(playerData, url) {
   }
 
   const rankHtml = rank ? `<span class="player-rank">#${rank}</span> ` : "";
-  const titleHtml = title ? `<span class="title">${title}</span> ` : "";
   const fedHtml = federation
-    ? ` <span class="player-federation">${federation}</span>`
+    ? ` <span class="player-federation">${federation}</span> `
     : "";
+  const titleHtml = title ? `<span class="title">${title}</span> ` : "";
 
   let ratingHtml = "";
   if (Number.isFinite(rating)) {
@@ -364,9 +364,9 @@ function renderPlayerHeader(playerData, url) {
     );
     const changeStr =
       Number.isFinite(rtgchg) && rtgchg !== 0
-        ? `<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>`
+        ? `(<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>)`
         : "";
-    ratingHtml = ` <span class="player-rating">${newRating} (${changeStr})</span>`;
+    ratingHtml = ` <span class="player-rating">${newRating} ${changeStr}</span>`;
   }
 
   const nameHtml = url
@@ -374,7 +374,7 @@ function renderPlayerHeader(playerData, url) {
     : `<strong>${name}</strong>`;
 
   $("#player-name").html(
-    `${rankHtml}${titleHtml}${nameHtml}${ratingHtml}${fedHtml}`,
+    `${rankHtml}${fedHtml}${titleHtml}${nameHtml}${ratingHtml}`,
   );
 }
 
