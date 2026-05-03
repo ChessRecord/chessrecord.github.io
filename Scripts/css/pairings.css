@@ -1,16 +1,25 @@
-#chess-resultsForm {
-    margin-bottom: var(--small);
+/* ─── Layout Primitives ─────────────────────────── */
+
+div.table {
+    display: block;
+    overflow-x: auto;
 }
 
-.player-rank {
-    transform: skewX(-10deg);
-    display: inline-block;
-    font-weight: 600;
+table {
+    width: 100%;
+    min-width: max-content; /* Allow table to expand and be scrollable */
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1.5px var(--white-d) solid; /* Outer border */
+    border-radius: var(--border-radius);
 }
+
+/* ─── Typography ────────────────────────────────── */
 
 #player-name {
     margin-bottom: var(--small);
     margin-left: var(--small);
+
     color: var(--deep-blue);
 }
 
@@ -19,40 +28,34 @@
     font-optical-sizing: auto;
 }
 
-.dark-theme #player-name {
-    color: var(--white-e0);
+.player-rank {
+    display: inline-block;
+
+    font-weight: 600;
+    transform: skewX(-10deg);
 }
 
-div.table {
-    display: block;
-    overflow-x: auto;
+/* ─── Component Styles ──────────────────────────── */
+
+#chess-resultsForm {
+    margin-bottom: var(--small);
 }
-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-    min-width: max-content; /* Allow table to expand and be scrollable */
-    border-radius: var(--border-radius);
-    border: 1.5px var(--white-d) solid; /* Outer border */
-}
-.dark-theme table {
-    border: 1.5px var(--grey-333) solid; /* Outer border */
-}
+
 th,
 td {
-    border: 1px var(--white-d) solid;
     padding: 6px 10px;
+    border: 1px var(--white-d) solid;
+
     text-align: center;
     white-space: nowrap;
 }
 
-.dark-theme th,
-.dark-theme td {
-    border: 1px var(--grey-333) solid;
+th {
+    background: var(--white-e0-95);
 }
 
-.dark-theme tr:nth-child(even) {
-    background: var(--grey-333);
+tr:nth-child(even) {
+    background: #fcfcfc;
 }
 
 /* Remove border from outermost cells so table border is visible */
@@ -60,56 +63,43 @@ th:first-child,
 td:first-child {
     border-left: none;
 }
+
 th:last-child,
 td:last-child {
     border-right: none;
 }
+
 thead tr:first-child th {
     border-top: none;
 }
+
 tbody tr:last-child td {
     border-bottom: none;
 }
+
 th:first-child {
-    border-top-left-radius: calc(var(--border-radius)-3px);
+    border-top-left-radius: calc(var(--border-radius) - 3px);
 }
+
 th:last-child {
-    border-top-right-radius: calc(var(--border-radius)-3px);
+    border-top-right-radius: calc(var(--border-radius) - 3px);
 }
+
 tr:last-child td:first-child {
     border-bottom-left-radius: var(--border-radius);
 }
+
 tr:last-child td:last-child {
     border-bottom-right-radius: var(--border-radius);
 }
 
-.title {
-    display: inline-block;
-    font-size: var(--small);
-    padding: 0 4px;
-    background-color: var(--red);
-    color: white;
-    border-radius: 4px;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-th {
-    background: var(--white-e0-95);
-}
-
-.dark-theme th {
-    background: var(--grey-444);
-}
-
-tr:nth-child(even) {
-    background: #fcfcfc;
-}
 .result-cell {
-    text-align: center;
-    font-size: 1.1em;
     display: flex;
     justify-content: space-around;
+    align-items: center;
+
+    font-size: 1.1em;
+    text-align: center;
 }
 
 .result-cell:only-child,
@@ -118,45 +108,78 @@ tr:nth-child(even) {
 }
 
 .note {
-    font-size: 0.95em;
-    color: #444;
     margin-top: 12px;
+
+    color: #444;
+    font-size: 0.95em;
     text-align: center;
 }
 
-@media screen and (max-width: 600px) {
-    .note {
-        display: none;
-    }
+.box-black::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+
+    width: 1em;
+    height: 1em;
+    border: 1.5px solid #777;
+    border-radius: 0.15em;
+
+    background: #222;
+
+    box-shadow: 0 0 0 1px #333 inset;
+}
+
+.box-white::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+
+    width: 1em;
+    height: 1em;
+    border: 1.5px solid #bbb;
+    border-radius: 0.15em;
+
+    background: #fff;
+
+    box-shadow: 0 0 0 1px #eee inset;
+}
+
+.tooltiptext {
+    transform: translate(12.5%, -25%);
+}
+
+/* ─── Dark Theme Overrides ──────────────────────── */
+
+.dark-theme #player-name {
+    color: var(--white-e0);
+}
+
+.dark-theme table {
+    border: 1.5px var(--grey-333) solid; /* Outer border */
+}
+
+.dark-theme th,
+.dark-theme td {
+    border: 1px var(--grey-333) solid;
+}
+
+.dark-theme th {
+    background: var(--grey-444);
+}
+
+.dark-theme tr:nth-child(even) {
+    background: var(--grey-333);
 }
 
 .dark-theme .note {
     color: var(--white-e0);
 }
 
-.box-black::before {
-    content: "";
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    background: #222;
-    border: 1.5px solid #777;
-    border-radius: 0.15em;
-    vertical-align: middle;
-    box-shadow: 0 0 0 1px #333 inset;
-}
-.box-white::before {
-    content: "";
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    background: #fff;
-    border: 1.5px solid #bbb;
-    border-radius: 0.15em;
-    vertical-align: middle;
-    box-shadow: 0 0 0 1px #eee inset;
-}
+/* ─── Media Queries ─────────────────────────────── */
 
-.tooltiptext {
-    transform: translate(12.5%, -25%);
+@media screen and (max-width: 600px) {
+    .note {
+        display: none;
+    }
 }

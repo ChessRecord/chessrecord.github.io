@@ -1,27 +1,32 @@
-/* Imports */
+/* ─── Imports ───────────────────────────────────── */
+
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap");
 @import url("tooltip.css");
 @import url("root.css");
 
-/* Base HTML and Reset */
-html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+/* ─── Reset / Base Styles ───────────────────────── */
 
 * {
     box-sizing: border-box;
     margin: 0;
 }
 
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-    background-color: var(--white-container);
-    font-family: "Poppins", sans-serif;
-    color: var(--text-100);
     display: flex;
     justify-content: center;
+
     min-height: 100vh;
+
+    background-color: var(--white-container);
+
+    color: var(--text-100);
+    font-family: "Poppins", sans-serif;
 }
 
 .fontawesome {
@@ -29,10 +34,12 @@ body {
     user-select: none;
 }
 
-/* Utility Classes */
+/* ─── Layout Primitives ─────────────────────────── */
+
 .flex {
-    width: 100%;
     flex-grow: 1;
+
+    width: 100%;
 }
 
 .inlineForm {
@@ -41,29 +48,49 @@ body {
     gap: calc(var(--medium) / 2);
 }
 
-/* Container Styles */
 .container {
-    background-color: var(--white-container);
+    position: relative;
+
     width: 70%;
     padding: 50px;
-    position: relative;
+
+    background-color: var(--white-container);
+
     overflow: visible;
     animation: slideIn 0.3s ease-out;
 }
 
-/* Typography */
+/* ─── Typography ────────────────────────────────── */
+
 .container h1 {
-    font-family: "Google Sans Flex", sans-serif;
-    text-align: center;
-    color: var(--text-100);
     margin-bottom: 35px;
-    font-weight: 700;
+
+    color: var(--text-100);
+    font-family: "Google Sans Flex", sans-serif;
     font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+
     pointer-events: none;
     user-select: none;
 }
 
-/* Form Styles */
+.title {
+    display: inline-block;
+
+    padding: 0 4px;
+    border-radius: 4px;
+
+    background-color: var(--red);
+
+    color: white;
+    font-size: var(--small);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* ─── Component Styles ──────────────────────────── */
+
 form {
     display: grid;
     gap: 20px;
@@ -74,9 +101,11 @@ textarea,
 select,
 button {
     padding: 14px 18px;
+
     background-color: var(--white-container);
     border: 1.5px var(--white-d) solid;
     border-radius: var(--border-radius);
+
     font-family: "Poppins", sans-serif;
     font-size: var(--small);
 }
@@ -94,40 +123,46 @@ input:focus::placeholder {
 
 textarea {
     width: 100%;
-    resize: vertical;
     min-height: 60vh;
+
+    resize: vertical;
 }
 
 button {
     background-color: var(--orange);
+
     color: var(--white-container);
     font-weight: 600;
+
     border: none;
     cursor: pointer;
 }
 
 button[type="submit"] {
-    height: calc(1.25 * (var(--small) + var(--normal)));
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--medium);
+
+    height: calc(1.25 * (var(--small) + var(--normal)));
 }
 
 button.outline {
     background-color: transparent;
+
     color: var(--text-100);
-    border: 2px solid var(--white-d);
     font-weight: 600;
+
+    border: 2px solid var(--white-d);
     cursor: pointer;
 }
 
 #searchURL {
+    width: fit-content !important; /* specificity-override */
+
     border-radius: 100px;
-    width: fit-content !important;
 }
 
-/* Input Specific Styles */
 .titleInput,
 .ratingInput {
     text-align: center;
@@ -135,41 +170,49 @@ button.outline {
 
 .titleInput {
     flex: 0 0 80px;
+
     width: 80px;
 }
 
 .ratingInput {
     flex: 0 0 115px;
+
     width: 115px;
 }
 
 #round,
 #time {
-    flex: 0 0 105px !important;
-    width: 105px !important;
+    flex: 0 0 105px !important; /* specificity-override */
+
+    width: 105px !important; /* specificity-override */
 }
 
-/* Loader */
 .loader {
+    display: none;
+
     width: var(--normal);
     aspect-ratio: 1;
-    border-radius: 50%;
+
     border: 5px solid var(--white-e0-95);
     border-right-color: transparent;
+    border-radius: 50%;
+
     animation: l2 1s infinite linear;
-    display: none;
 }
 
-/* Navigation & Misc */
 a.redirect {
     position: fixed;
     bottom: 20px;
     left: 20px;
     z-index: 1000;
+
     padding: 14px 18px;
+
     background-color: transparent;
-    font-size: 24px;
+
     color: var(--deep-blue);
+    font-size: 24px;
+
     cursor: pointer;
 }
 
@@ -177,41 +220,27 @@ a.redirect {
     display: flex;
     align-items: center;
     justify-content: center;
+
     padding: var(--small);
+
     font-size: var(--medium);
+
     cursor: pointer;
-}
-
-.filters {
-    display: flex;
-    flex-direction: row;
-    position: relative;
-}
-
-.load {
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    gap: var(--small);
-    font-size: var(--medium);
-    cursor: pointer;
-}
-
-.load i {
-    color: var(--deep-blue);
 }
 
 span.gap {
     display: inline-block;
+
     width: 0.5rem;
 }
-
 .tilt {
-    transform: skewX(-10deg);
     display: inline-block;
+
+    transform: skewX(-10deg);
 }
 
-/* Animations */
+/* ─── Keyframes ─────────────────────────────────── */
+
 @keyframes slideIn {
     from {
         opacity: 0;

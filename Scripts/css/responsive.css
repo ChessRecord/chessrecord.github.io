@@ -1,69 +1,9 @@
-/* Responsive Styles - Media Queries Ordered Largest to Smallest */
+/* ─── Media Queries ─────────────────────────────── */
 
-/* 1. Large screens (up to 1250px) */
-@media screen and (max-width: 1250px) {
-    .player-details {
-        flex-direction: column;
-        text-align: center;
-    }
-    .player-left,
-    .player-right {
-        text-align: center;
-        margin-top: 10px;
-    }
-    .game-result {
-        position: absolute;
-        max-width: fit-content;
-        right: 10%;
-        transform: translate(0, -75%) !important;
-    }
-    #theme-toggle-btn {
-        max-width: fit-content;
-        right: 0 !important;
-    }
-    .game-details {
-        display: flex;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: var(--small);
-        margin-bottom: 5px !important;
-    }
-    .entry-meta {
-        justify-content: center;
-    }
-}
-
-/* 2. Confirmation modal width (up to 1150px, 950px) */
-@media screen and (max-width: 1150px) {
-    .confirmation {
-        width: 60vw;
-    }
-}
-@media screen and (max-width: 950px) {
-    .confirmation {
-        width: 90vw;
-    }
-}
-
-/* 3. Container and form elements (up to 875px) */
-@media screen and (max-width: 875px) {
-    .container {
-        padding: 35px;
-        width: 100%;
-    }
-    .inlineForm {
-        gap: 10px;
-    }
-    input,
-    select,
-    button {
-        width: 100%;
-    }
-    .confirmation i.warning-big {
-        font-size: 4rem;
-    }
-    .confirmation .options {
-        flex-direction: column;
+/* 5. Heading font size (up to 515px) */
+@media screen and (max-width: 515px) {
+    .container h1 {
+        font-size: 6vw;
     }
 }
 
@@ -72,25 +12,106 @@
     .player-details {
         width: 100%;
     }
+
     .player-left,
     .player-right {
         width: 100%;
-        text-align: left !important;
+
+        text-align: left !important; /* specificity-override */
     }
+
     .game-details {
         gap: 0;
     }
+
     .game-tournament strong {
         display: none;
     }
+
     .game-details .timecontrol-category {
         display: none;
     }
 }
 
-/* 5. Heading font size (up to 515px) */
-@media screen and (max-width: 515px) {
-    .container h1 {
-        font-size: 6vw;
+/* 3. Container and form elements (up to 875px) */
+@media screen and (max-width: 875px) {
+    .container {
+        width: 100%;
+        padding: 35px;
+    }
+
+    .inlineForm {
+        gap: 10px;
+    }
+
+    input,
+    select,
+    button {
+        width: 100%;
+    }
+
+    .confirmation i.warning-big {
+        font-size: 4rem;
+    }
+
+    .confirmation .options {
+        flex-direction: column;
+    }
+}
+
+/* 2. Confirmation modal width (up to 950px) */
+@media screen and (max-width: 950px) {
+    .confirmation {
+        width: 90vw;
+    }
+}
+
+/* 2. Confirmation modal width (up to 1150px) */
+@media screen and (max-width: 1150px) {
+    .confirmation {
+        width: 60vw;
+    }
+}
+
+/* 1. Large screens (up to 1250px) */
+@media screen and (max-width: 1250px) {
+    .player-details {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .player-left,
+    .player-right {
+        margin-top: 10px;
+
+        text-align: center;
+    }
+
+    .game-result {
+        position: absolute;
+        right: 10%;
+
+        max-width: fit-content;
+
+        transform: translate(0, -75%) !important; /* specificity-override */
+    }
+
+    #theme-toggle-btn {
+        right: 0 !important; /* specificity-override */
+
+        max-width: fit-content;
+    }
+
+    .game-details {
+        display: flex;
+        align-items: center !important; /* specificity-override */
+        justify-content: center !important; /* specificity-override */
+        gap: var(--small);
+
+        margin-bottom: 5px !important; /* specificity-override */
+    }
+
+    .entry-meta {
+        justify-content: center;
     }
 }

@@ -1,18 +1,24 @@
-/* Backdrop */
+/* ─── Layout Primitives ─────────────────────────── */
+
 .blur {
     position: fixed;
     top: 0;
     left: 0;
+    z-index: 999;
+
     width: 100vw;
     height: 100vh;
+
     background-color: rgba(0, 0, 0, 0.5);
+
     backdrop-filter: blur(5px);
-    z-index: 999;
     opacity: 0;
     pointer-events: none;
     user-select: none;
     transition: opacity 0.3s ease;
 }
+
+/* ─── State & Modifier Classes ──────────────────── */
 
 .blur.visible {
     opacity: 1;
@@ -24,53 +30,64 @@
     pointer-events: none;
 }
 
-/* Confirmation Modal */
+/* ─── Component Styles ──────────────────────────── */
+
 .confirmation {
     position: fixed;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: var(--medium);
     top: 50%;
     left: 50%;
+    z-index: 1000;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--medium);
+
     width: 30vw;
     height: fit-content;
-    background-color: var(--white-container);
-    border-radius: var(--border-radius);
     padding: var(--normal);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
     border: 1.5px var(--white-d) solid;
-    z-index: 1000;
-    animation: slideInAbsolute 0.3s ease-out;
+    border-radius: var(--border-radius);
+
+    background-color: var(--white-container);
+
     text-align: center;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
     transform: translate(-50%, -50%);
+    animation: slideInAbsolute 0.3s ease-out;
 }
 
 .confirmation i.warning-big {
-    font-size: 5rem;
     color: var(--orange);
+    font-size: 5rem;
 }
 
 .confirmation .options {
-    width: 100%;
     display: flex;
     gap: var(--small);
+
+    width: 100%;
 }
 
 .confirmation .options button {
-    width: 100%;
     flex-grow: 1;
+
+    width: 100%;
 }
 
 .confirmation .cancel {
+    position: absolute;
     top: 0;
     right: 0;
-    position: absolute;
-    transform: translate(-100%, 10%);
+
     font-size: 1.5rem;
+
     cursor: pointer;
+    transform: translate(-100%, 10%);
 }
+
+/* ─── Keyframes ─────────────────────────────────── */
 
 @keyframes slideInAbsolute {
     from {

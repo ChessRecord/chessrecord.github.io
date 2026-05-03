@@ -1,41 +1,51 @@
-/* Tooltip Styles */
+/* ─── Component Styles ──────────────────────────── */
+
 .tooltip {
-  position: relative;
-  display: inline-block;
+    position: relative;
+
+    display: inline-block;
 }
 
 .tooltip .tooltiptext {
-  visibility: hidden;
-  opacity: 0;
-  width: 120px;
-  background-color: #000000C7;
-  color: #fff;
-  text-align: center;
-  font-size: 0.85rem;
-  border-radius: 6px;
-  padding: 5px 10px;
-  position: absolute;
-  z-index: 100;
-  top: -5px;
-  left: 110%;
+    position: absolute;
+    top: -5px;
+    left: 110%;
+    z-index: 100;
+
+    display: inline-block;
+    visibility: hidden;
+    opacity: 0;
+
+    width: 120px;
+    padding: 5px 10px;
+    border-radius: 6px;
+
+    background-color: #000000c7;
+
+    color: #fff;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 .tooltip .tooltiptext::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  margin-top: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: transparent #000000C7 transparent transparent;
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 100%;
+
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent #000000c7 transparent transparent;
 }
 
+/* ─── State & Modifier Classes ──────────────────── */
+
 .tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
+    visibility: visible;
+    opacity: 1;
 }
 
 .tooltip:not(:hover) .tooltiptext {
-  visibility: hidden;
+    visibility: hidden;
 }
