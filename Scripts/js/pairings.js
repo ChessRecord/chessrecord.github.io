@@ -83,9 +83,9 @@ const SessionStorage = {
 // Utilities
 // =============================================================================
 
-/** True when a value is non-null, non-undefined, non-empty-string, and non-zero. */
+/** True when a value is non-null, non-undefined, and non-empty-string. */
 function hasValue(v) {
-  return v !== null && v !== undefined && v !== "" && v !== 0;
+  return v !== null && v !== undefined && v !== "";
 }
 
 /**
@@ -94,7 +94,7 @@ function hasValue(v) {
  */
 function buildOpponentProfileUrl(baseUrl, startNo) {
   const n = Number(startNo);
-  if (!baseUrl || !startNo || isNaN(n)) return null;
+  if (!baseUrl || !startNo || isNaN(n) || n <= 0) return null;
 
   try {
     const u = new URL(baseUrl);
@@ -471,9 +471,17 @@ function renderPairingsTable(rounds, playerData, url) {
     .map((r) => `<tr>${visible.map((c) => c.render(r)).join("")}</tr>`)
     .join("")}</tbody>`;
 
+  const showNote =
+    playerData.rating > 0 &&
+    rounds.some(
+      (r) =>
+        r.opponentRating > 0 &&
+        Math.abs(playerData.rating - r.opponentRating) > 400,
+    );
+
   $("#pairings-table").html(`
     <table>${thead}${tbody}</table>
-    <div class="note">*) Rating difference of more than 400. It was limited to 400.</div>
+    ${showNote ? '<div class="note">*) Rating difference of more than 400. It was limited to 400.</div>' : ""}
   `);
 }
 
