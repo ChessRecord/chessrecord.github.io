@@ -140,73 +140,130 @@ async function fetchPage(url) {
 }
 
 /**
- * Extracts player metadata from the info table (index 4).
- * Only known keys defined in PLAYER_INFO_KEYS are retained.
+ * Extracts player metadata from the info table.
+ * The table is located by inspecting only its own direct first-column cells
+ * (not descendant text) for the exact label "Name". This prevents outer layout
+ * tables — whose single large cells contain all descendant text — from
+ * matching first. Only known keys defined in PLAYER_INFO_KEYS are retained.
  */
 function parsePlayerInfo($html) {
-  const info = {};
-  $html
+  const $table = $html
     .find("table")
-    .eq(4)
-    .find("tr")
-    .each((_, row) => {
-      const cells = $(row).find("td");
-      if (cells.length < 2) return;
-      const key = $(cells[0]).text().trim().replace(/:$/, "");
-      if (PLAYER_INFO_KEYS.has(key)) info[key] = $(cells[1]).text().trim();
-    });
-  return info;
+    .filter((_, t) =>
+      $(t)
+        .children("tbody")
+        .children("tr")
+        .children("td:first-child")
+        .toArray()
+        .some((td) => $(td).text().trim().replace(/:$/, "") === "Name"),
+    )
+    .first();
+
+  if (!$table.length)
+    throw new Error(
+      "Chess-Results mismatch. Please verify the URL or tournament status.",
+    );
+
+  return Object.fromEntries(
+    $table
+      .find("tr:has(td)")
+      .get()
+      .map((row) => {
+        const $cells = $(row).find("td");
+        return [
+          $cells.eq(0).text().trim().replace(/:$/, ""),
+          $cells.eq(1).text().trim(),
+        ];
+      })
+      .filter(([key]) => PLAYER_INFO_KEYS.has(key)),
+  );
 }
 
 /**
- * Extracts all pairings from the results table (index 5).
- * Column positions are derived dynamically from the <th> headers so the
- * parser adapts automatically to any column ordering the server returns.
+ * Extracts all pairings from the results table.
+ * The table is located by checking that its first row contains at least one
+ * <th> element (ruling out outer layout tables, which have none) and that
+ * those direct header cells include "Rd" and "Res". Column positions are
+ * derived dynamically via header keywords matched with .includes(), so new
+ * columns are handled automatically. tr:has(td):not(:has(th)) skips the
+ * mixed-content header row; empty round cells filter remaining blank rows.
  */
 function parsePairings($html, url) {
-  const table = $html.find("table").eq(5);
-  const headers = table
+  const $table = $html
+    .find("table")
+    .filter((_, t) => {
+      const $firstRow = $(t).children("tbody").children("tr").first();
+      if (!$firstRow.children("th").length) return false;
+      const headerTexts = $firstRow
+        .children("th, td")
+        .map((_, c) => $(c).text().trim())
+        .get();
+      return (
+        headerTexts.some((h) => h.includes("Rd")) &&
+        headerTexts.some((h) => h.includes("Res"))
+      );
+    })
+    .first();
+
+  if (!$table.length)
+    throw new Error(
+      "Chess-Results mismatch. Please verify the URL or tournament status.",
+    );
+
+  const headers = $table
     .find("tr")
     .first()
     .find("th")
     .map((_, th) => $(th).text().trim() || "Title")
     .get();
-  const resultIdx = headers.indexOf("Res.");
-  const pairings = [];
 
-  table.find("tr").each((i, row) => {
-    if (i === 0 || i % 2 === 0) return; // skip header and interleaved blank rows
+  // Finds the first header index whose text contains the given keyword.
+  const colIdx = (keyword) => headers.findIndex((h) => h.includes(keyword));
 
-    const cells = $(row)
-      .find("td")
-      .map((_, td) => $(td).text().trim())
-      .get();
-    if (cells.length < headers.length) return;
+  const idx = {
+    rd: colIdx("Rd"),
+    bo: colIdx("Bo"),
+    sno: colIdx("SNo"),
+    title: colIdx("Title"),
+    name: colIdx("Name"),
+    rtg: colIdx("Rtg"),
+    fed: colIdx("FED"),
+    club: colIdx("Club"),
+    pts: colIdx("Pts"),
+    res: colIdx("Res"),
+  };
 
-    const col = Object.fromEntries(headers.map((k, idx) => [k, cells[idx]]));
-    const $resultCell = $(row).find(`td:eq(${resultIdx})`);
+  if (idx.rd < 0 || idx.res < 0)
+    throw new Error(
+      "Chess-Results mismatch. Please verify the URL or tournament status.",
+    );
 
-    pairings.push({
-      round: col["Rd."],
-      boardNo: col["Bo."],
-      playerStartNo: col["SNo"],
-      opponentTitle: col["Title"],
-      opponentName: col["Name"],
-      opponentRating: parseInt(col["Rtg"]) || 0,
-      opponentFederation: col["FED"],
-      opponentClub: col["Club/City"],
-      opponentPoints: col["Pts."],
-      result: col["Res."],
-      playerColor: $resultCell.find("div.FarbesT").length
-        ? "Black"
-        : $resultCell.find("div.FarbewT").length
-          ? "White"
-          : "",
-      opponentProfileUrl: buildOpponentProfileUrl(url, col["SNo"]),
-    });
-  });
-
-  return pairings;
+  return $table
+    .find("tr:has(td):not(:has(th))")
+    .get()
+    .map((row) => {
+      const $cells = $(row).find("td");
+      const cell = (i) => (i >= 0 ? $cells.eq(i).text().trim() : "");
+      return {
+        round: cell(idx.rd),
+        boardNo: cell(idx.bo),
+        playerStartNo: cell(idx.sno),
+        opponentTitle: cell(idx.title),
+        opponentName: cell(idx.name),
+        opponentRating: parseInt(cell(idx.rtg)) || 0,
+        opponentFederation: cell(idx.fed),
+        opponentClub: cell(idx.club),
+        opponentPoints: cell(idx.pts),
+        result: cell(idx.res),
+        playerColor: $cells.eq(idx.res).find("div.FarbesT").length
+          ? "Black"
+          : $cells.eq(idx.res).find("div.FarbewT").length
+            ? "White"
+            : "",
+        opponentProfileUrl: buildOpponentProfileUrl(url, cell(idx.sno)),
+      };
+    })
+    .filter((p) => p.round !== "");
 }
 
 /** Fetches and parses a chess-results.com player page. */
@@ -232,9 +289,12 @@ async function getChessResults(url) {
 
   const { playerInfo, pairings } = await scrapeChessResults(url);
 
-  const rating = parseInt(playerInfo["Rating"]);
-  if (isNaN(rating))
-    throw new Error("Could not detect your rating from the page.");
+  const rating =
+    parseInt(
+      playerInfo["Rating"] ??
+        playerInfo["Rating international"] ??
+        playerInfo["Rating national"],
+    ) || 0;
 
   const rtgchg = parseFloat(
     (playerInfo["FIDE rtg +/-"] ?? "0").replace(/,/g, "."),
@@ -455,7 +515,7 @@ async function showPairingsTableFromInput() {
 
     PersistentStorage.set(url); // always persisted on a successful fetch
   } catch (err) {
-    alert("No Pairings found for this URL.");
+    alert(err.message || "No Pairings found for this URL.");
     console.error(err);
   } finally {
     hideLoader("#searchURL span");
