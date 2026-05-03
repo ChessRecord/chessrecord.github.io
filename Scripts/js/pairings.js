@@ -471,18 +471,17 @@ function renderPairingsTable(rounds, playerData, url) {
     .map((r) => `<tr>${visible.map((c) => c.render(r)).join("")}</tr>`)
     .join("")}</tbody>`;
 
-  const showNote =
-    playerData.rating > 0 &&
-    rounds.some(
-      (r) =>
-        r.opponentRating > 0 &&
-        Math.abs(playerData.rating - r.opponentRating) > 400,
-    );
-
-  $("#pairings-table").html(`
-    <table>${thead}${tbody}</table>
-    ${showNote ? '<div class="note">*) Rating difference of more than 400. It was limited to 400.</div>' : ""}
-  `);
+  $("#pairings-table").html(
+    `<table>${thead}${tbody}</table>` +
+      (playerData.rating > 0 &&
+      rounds.some(
+        (r) =>
+          r.opponentRating > 0 &&
+          Math.abs(playerData.rating - r.opponentRating) > 400,
+      )
+        ? '<div class="note">*) Rating difference of more than 400. It was limited to 400.</div>'
+        : ""),
+  );
 }
 
 // =============================================================================

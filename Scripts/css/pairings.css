@@ -2,7 +2,7 @@
 
 div.table {
     display: block;
-    overflow-x: auto;
+    width: 100%;
 }
 
 table {
@@ -178,7 +178,11 @@ tr:last-child td:last-child {
 
 /* ─── Media Queries ─────────────────────────────── */
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 875px) {
+    div.table {
+        overflow-x: auto;
+    }
+
     .note {
         display: none;
     }
