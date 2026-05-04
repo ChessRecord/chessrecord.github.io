@@ -476,8 +476,12 @@ async function showPairingsTableFromInput() {
     const { playerInfo, rating, rtgchg, rounds } = await getChessResults(url);
     const playerData = buildPlayerData(playerInfo, rating, rtgchg, url);
     const liveRoundsJSON = JSON.stringify(rounds);
+    const livePlayerDataJSON = JSON.stringify(playerData);
 
-    if (liveRoundsJSON !== SessionStorage.get("rounds")) {
+    if (
+      liveRoundsJSON !== SessionStorage.get("rounds") ||
+      livePlayerDataJSON !== SessionStorage.get("playerData")
+    ) {
       renderPairingsTable(rounds, playerData, url);
       SessionStorage.set("rounds", rounds);
       SessionStorage.set("playerData", playerData);
