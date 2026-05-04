@@ -2,6 +2,10 @@
 
 const isValidString = (s) => typeof s === "string" && s.length > 0;
 
+/** True when a value is non-null, non-undefined, and non-empty-string. */
+const hasValue = (value) =>
+  value !== null && value !== undefined && value !== "";
+
 const toNumberOr = (value, fallback) => {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;

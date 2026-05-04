@@ -77,10 +77,6 @@ const SessionStorage = {
 // Utilities
 // =============================================================================
 
-/** True when a value is non-null, non-undefined, and non-empty-string. */
-const hasValue = (value) =>
-  value !== null && value !== undefined && value !== "";
-
 /**
  * Builds a chess-results.com profile URL for a given start number by
  * replacing the `snr` query parameter in the source URL.
