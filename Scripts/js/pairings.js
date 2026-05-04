@@ -37,7 +37,6 @@ const PLAYER_INFO_KEYS = new Set([
 
 const PersistentStorage = {
   KEY: "chessResultsUrl",
-
   get() {
     return localStorage.getItem(this.KEY);
   },
@@ -50,15 +49,10 @@ const PersistentStorage = {
 };
 
 const SessionStorage = {
-  KEYS: {
-    rounds: "pairingsRounds",
-    playerData: "pairingsPlayerData",
-  },
-
+  KEYS: { rounds: "pairingsRounds", playerData: "pairingsPlayerData" },
   get(key) {
     return sessionStorage.getItem(this.KEYS[key]);
   },
-
   getJSON(key) {
     try {
       return JSON.parse(this.get(key));
@@ -66,16 +60,16 @@ const SessionStorage = {
       return null;
     }
   },
-
   set(key, value) {
     sessionStorage.setItem(
       this.KEYS[key],
       typeof value === "object" ? JSON.stringify(value) : String(value ?? ""),
     );
   },
-
   clear(...keys) {
-    keys.forEach((k) => sessionStorage.removeItem(this.KEYS[k]));
+    keys.forEach((storageKey) =>
+      sessionStorage.removeItem(this.KEYS[storageKey]),
+    );
   },
 };
 
@@ -84,28 +78,26 @@ const SessionStorage = {
 // =============================================================================
 
 /** True when a value is non-null, non-undefined, and non-empty-string. */
-function hasValue(v) {
-  return v !== null && v !== undefined && v !== "";
-}
+const hasValue = (value) =>
+  value !== null && value !== undefined && value !== "";
 
 /**
  * Builds a chess-results.com profile URL for a given start number by
  * replacing the `snr` query parameter in the source URL.
  */
 function buildOpponentProfileUrl(baseUrl, startNo) {
-  const n = Number(startNo);
-  if (!baseUrl || !startNo || isNaN(n) || n <= 0) return null;
-
+  const snr = Number(startNo);
+  if (!baseUrl || !startNo || isNaN(snr) || snr <= 0) return null;
   try {
-    const u = new URL(baseUrl);
-    u.searchParams.set("snr", String(n));
-    return u.toString();
+    const parsedUrl = new URL(baseUrl);
+    parsedUrl.searchParams.set("snr", String(snr));
+    return parsedUrl.toString();
   } catch {
     if (typeof baseUrl !== "string") return null;
-    const snr = encodeURIComponent(String(n));
+    const snrEncoded = encodeURIComponent(String(snr));
     if (baseUrl.includes("snr="))
-      return baseUrl.replace(/([?&]snr=)[^&]*/, "$1" + snr);
-    return baseUrl + (baseUrl.includes("?") ? "&" : "?") + "snr=" + snr;
+      return baseUrl.replace(/([?&]snr=)[^&]*/, "$1" + snrEncoded);
+    return baseUrl + (baseUrl.includes("?") ? "&" : "?") + "snr=" + snrEncoded;
   }
 }
 
@@ -116,17 +108,15 @@ function buildOpponentProfileUrl(baseUrl, startNo) {
  */
 function formatRatingDelta(playerRating, oppRating, score) {
   const delta = calcChange(playerRating, oppRating, score);
-  if (delta === "") return "";
-  return (delta >= 0 ? "+" : "") + delta;
+  return delta === "" ? "" : (delta >= 0 ? "+" : "") + delta;
 }
 
 /**
  * Normalises fractional-point notation from the server format
  * (e.g. "1,5" → "1½", "0,5" → "½").
  */
-function normalisePoints(raw) {
-  return raw.replace(/,5/g, "&#189;").replace(/0&#189;/g, "&#189;");
-}
+const normalisePoints = (raw) =>
+  raw.replace(/,5/g, "&#189;").replace(/0&#189;/g, "&#189;");
 
 // =============================================================================
 // Data acquisition
@@ -139,18 +129,20 @@ async function fetchPage(url) {
   return res.text();
 }
 
+const LAYOUT_MISMATCH =
+  "Chess-Results mismatch. Please verify the URL or tournament status.";
+
 /**
  * Extracts player metadata from the info table.
- * The table is located by inspecting only its own direct first-column cells
- * (not descendant text) for the exact label "Name". This prevents outer layout
- * tables — whose single large cells contain all descendant text — from
- * matching first. Only known keys defined in PLAYER_INFO_KEYS are retained.
+ * The table is located by checking its own direct first-column cells for the
+ * exact label "Name", preventing outer layout tables (whose cells contain all
+ * descendant text) from matching. Only keys in PLAYER_INFO_KEYS are retained.
  */
 function parsePlayerInfo($html) {
   const $table = $html
     .find("table")
-    .filter((_, t) =>
-      $(t)
+    .filter((_, tableElement) =>
+      $(tableElement)
         .children("tbody")
         .children("tr")
         .children("td:first-child")
@@ -159,17 +151,15 @@ function parsePlayerInfo($html) {
     )
     .first();
 
-  if (!$table.length)
-    throw new Error(
-      "Chess-Results mismatch. Please verify the URL or tournament status.",
-    );
+  if (!$table.length) throw new Error(LAYOUT_MISMATCH);
 
   return Object.fromEntries(
     $table
-      .find("tr:has(td)")
+      .children("tbody")
+      .children("tr")
       .get()
       .map((row) => {
-        const $cells = $(row).find("td");
+        const $cells = $(row).children("td");
         return [
           $cells.eq(0).text().trim().replace(/:$/, ""),
           $cells.eq(1).text().trim(),
@@ -181,44 +171,42 @@ function parsePlayerInfo($html) {
 
 /**
  * Extracts all pairings from the results table.
- * The table is located by checking that its first row contains at least one
- * <th> element (ruling out outer layout tables, which have none) and that
- * those direct header cells include "Rd" and "Res". Column positions are
- * derived dynamically via header keywords matched with .includes(), so new
- * columns are handled automatically. tr:has(td):not(:has(th)) skips the
- * mixed-content header row; empty round cells filter remaining blank rows.
+ * The table is located by requiring at least one <th> in its first row (ruling
+ * out layout tables) and those cells containing "Rd" and "Res". Column positions
+ * are derived dynamically via .includes() so new columns are handled
+ * automatically. children() traversal throughout prevents nested result-cell
+ * tables from bleeding into the index mapping.
  */
 function parsePairings($html, url) {
   const $table = $html
     .find("table")
-    .filter((_, t) => {
-      const $firstRow = $(t).children("tbody").children("tr").first();
+    .filter((_, tableElement) => {
+      const $firstRow = $(tableElement)
+        .children("tbody")
+        .children("tr")
+        .first();
       if (!$firstRow.children("th").length) return false;
       const headerTexts = $firstRow
         .children("th, td")
-        .map((_, c) => $(c).text().trim())
+        .map((_, headerCell) => $(headerCell).text().trim())
         .get();
       return (
-        headerTexts.some((h) => h.includes("Rd")) &&
-        headerTexts.some((h) => h.includes("Res"))
+        headerTexts.some((headerText) => headerText.includes("Rd")) &&
+        headerTexts.some((headerText) => headerText.includes("Res"))
       );
     })
     .first();
 
-  if (!$table.length)
-    throw new Error(
-      "Chess-Results mismatch. Please verify the URL or tournament status.",
-    );
+  if (!$table.length) throw new Error(LAYOUT_MISMATCH);
 
-  const headers = $table
-    .find("tr")
+  const $rows = $table.children("tbody").children("tr");
+  const headers = $rows
     .first()
-    .find("th")
+    .children("th")
     .map((_, th) => $(th).text().trim() || "Title")
     .get();
-
-  // Finds the first header index whose text contains the given keyword.
-  const colIdx = (keyword) => headers.findIndex((h) => h.includes(keyword));
+  const colIdx = (keyword) =>
+    headers.findIndex((headerText) => headerText.includes(keyword));
 
   const idx = {
     rd: colIdx("Rd"),
@@ -233,17 +221,16 @@ function parsePairings($html, url) {
     res: colIdx("Res"),
   };
 
-  if (idx.rd < 0 || idx.res < 0)
-    throw new Error(
-      "Chess-Results mismatch. Please verify the URL or tournament status.",
-    );
+  if (idx.rd < 0 || idx.res < 0) throw new Error(LAYOUT_MISMATCH);
 
-  return $table
-    .find("tr:has(td):not(:has(th))")
+  return $rows
+    .filter((_, row) => !$(row).children("th").length)
     .get()
     .map((row) => {
-      const $cells = $(row).find("td");
-      const cell = (i) => (i >= 0 ? $cells.eq(i).text().trim() : "");
+      const $cells = $(row).children("td");
+      const cell = (cellIndex) =>
+        cellIndex >= 0 ? $cells.eq(cellIndex).text().trim() : "";
+      const $resultCell = $cells.eq(idx.res);
       return {
         round: cell(idx.rd),
         boardNo: cell(idx.bo),
@@ -255,15 +242,15 @@ function parsePairings($html, url) {
         opponentClub: cell(idx.club),
         opponentPoints: cell(idx.pts),
         result: cell(idx.res),
-        playerColor: $cells.eq(idx.res).find("div.FarbesT").length
+        playerColor: $resultCell.find("div.FarbesT").length
           ? "Black"
-          : $cells.eq(idx.res).find("div.FarbewT").length
+          : $resultCell.find("div.FarbewT").length
             ? "White"
             : "",
         opponentProfileUrl: buildOpponentProfileUrl(url, cell(idx.sno)),
       };
     })
-    .filter((p) => p.round !== "");
+    .filter((pairing) => pairing.round !== "");
 }
 
 /** Fetches and parses a chess-results.com player page. */
@@ -300,14 +287,12 @@ async function getChessResults(url) {
     (playerInfo["FIDE rtg +/-"] ?? "0").replace(/,/g, "."),
   );
 
-  // Spread each raw pairing and override only the three fields that differ:
-  // opponentPoints is normalised and win/draw/loss are computed from ratings.
-  const rounds = pairings.map((p) => ({
-    ...p,
-    opponentPoints: normalisePoints(p.opponentPoints),
-    win: formatRatingDelta(rating, p.opponentRating, 1),
-    draw: formatRatingDelta(rating, p.opponentRating, 0.5),
-    loss: formatRatingDelta(rating, p.opponentRating, 0),
+  const rounds = pairings.map((pairing) => ({
+    ...pairing,
+    opponentPoints: normalisePoints(pairing.opponentPoints),
+    win: formatRatingDelta(rating, pairing.opponentRating, 1),
+    draw: formatRatingDelta(rating, pairing.opponentRating, 0.5),
+    loss: formatRatingDelta(rating, pairing.opponentRating, 0),
   }));
 
   return { playerInfo, rating, rtgchg, rounds };
@@ -334,6 +319,16 @@ function buildPlayerData(playerInfo, rating, rtgchg, url) {
 // =============================================================================
 
 /**
+ * Factory for the common column shape: present when hasValue, renders as plain <td>.
+ * Used for any column whose presence and display are both driven by a single field.
+ */
+const simpleCol = (header, key) => ({
+  header,
+  isPresent: (round) => hasValue(round[key]),
+  render: (round) => `<td>${round[key]}</td>`,
+});
+
+/**
  * Column definitions for the pairings table.
  *
  * Each entry carries:
@@ -344,76 +339,51 @@ function buildPlayerData(playerInfo, rating, rtgchg, url) {
  * A column is only included when at least one round returns true from isPresent.
  */
 const PAIRINGS_COLUMNS = [
-  {
-    header: "Round",
-    isPresent: (r) => hasValue(r.round),
-    render: (r) => `<td>${r.round}</td>`,
-  },
-  {
-    header: "Board",
-    isPresent: (r) => hasValue(r.boardNo),
-    render: (r) => `<td>${r.boardNo}</td>`,
-  },
-  {
-    header: "Start",
-    isPresent: (r) => hasValue(r.playerStartNo),
-    render: (r) => `<td>${r.playerStartNo}</td>`,
-  },
+  simpleCol("Round", "round"),
+  simpleCol("Board", "boardNo"),
+  simpleCol("Start", "playerStartNo"),
   {
     header: "Name",
-    isPresent: (r) => hasValue(r.opponentName),
-    render: (r) => `<td>
-      <span class="title">${r.opponentTitle || ""}</span>
+    isPresent: (round) => hasValue(round.opponentName),
+    render: (round) => `<td>
+      <span class="title">${round.opponentTitle || ""}</span>
       ${
-        r.opponentProfileUrl
-          ? `<a href="${r.opponentProfileUrl}" target="_blank">${r.opponentName}</a>`
-          : r.opponentName
+        round.opponentProfileUrl
+          ? `<a href="${round.opponentProfileUrl}" target="_blank">${round.opponentName}</a>`
+          : round.opponentName
       }
     </td>`,
   },
   {
     header: "Rating",
-    isPresent: (r) => hasValue(r.opponentRating),
-    render: (r) =>
+    isPresent: (round) => hasValue(round.opponentRating),
+    render: (round) =>
       `<td>${
-        r.opponentRating
-          ? `<span class="tooltip" style="height:100%;width:100%;">
-          ${r.opponentRating}
-          <span class="tooltiptext">
-            Win: ${r.win}<br>Draw: ${r.draw}<br>Loss: ${r.loss}
-          </span>
-        </span>`
+        round.opponentRating
+          ? `<span class="tooltip" style="height:100%;width:100%;">${round.opponentRating}
+           <span class="tooltiptext">Win: ${round.win}<br>Draw: ${round.draw}<br>Loss: ${round.loss}</span>
+         </span>`
           : "0"
       }</td>`,
   },
   {
     header: "Federation",
-    isPresent: (r) =>
-      hasValue(r.opponentFederation) && r.opponentFederation.trim() !== "",
-    render: (r) => `<td>${r.opponentFederation || ""}</td>`,
+    isPresent: (round) => !!round.opponentFederation?.trim(),
+    render: (round) => `<td>${round.opponentFederation}</td>`,
   },
+  simpleCol("Club/City", "opponentClub"),
+  simpleCol("Points", "opponentPoints"),
   {
-    header: "Club/City",
-    isPresent: (r) => hasValue(r.opponentClub),
-    render: (r) => `<td>${r.opponentClub}</td>`,
-  },
-  {
-    header: "Points",
-    isPresent: (r) => hasValue(r.opponentPoints),
-    render: (r) => `<td>${r.opponentPoints}</td>`,
-  },
-  {
-    // Result is always rendered; the colour indicator lives inside the cell.
     header: "Result",
     isPresent: () => true,
-    render: (r) => {
+    render: (round) => {
       const colorSpan =
-        r.playerColor === "Black"
+        round.playerColor === "Black"
           ? '<span class="box-black"></span>'
-          : r.playerColor === "White"
+          : round.playerColor === "White"
             ? '<span class="box-white"></span>'
             : "";
-      return `<td class="result-cell">${colorSpan}${r.result ? `<span>${r.result}</span>` : ""}</td>`;
+      return `<td class="result-cell">${colorSpan}${round.result ? `<span>${round.result}</span>` : ""}</td>`;
     },
   },
 ];
@@ -426,33 +396,27 @@ function renderPlayerHeader(playerData, url) {
   const { name, title, rank, rating, rtgchg, federation } = playerData;
   if (!name) return;
 
-  if ($("#player-name").length === 0)
+  if (!$("#player-name").length)
     $("#pairings-table").before('<div id="player-name"></div>');
 
-  const rankHtml = rank ? `<span class="player-rank">#${rank}</span> ` : "";
-  const fedHtml = federation
-    ? `<span class="player-federation">${federation}</span> `
-    : "";
-  const titleHtml = title ? `<span class="title">${title}</span> ` : "";
-
-  const nameHtml = url
-    ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${name}</strong></a>`
-    : `<strong>${name}</strong>`;
-
-  let ratingHtml = "";
-  if (Number.isFinite(rating)) {
-    const newRating = Math.round(
-      rating + (Number.isFinite(rtgchg) ? rtgchg : 0),
-    );
-    const changeStr =
-      Number.isFinite(rtgchg) && rtgchg !== 0
-        ? `(<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>)`
-        : "";
-    ratingHtml = ` <span class="player-rating">${newRating} ${changeStr}</span>`;
-  }
+  const newRating = Math.round(rating + (Number.isFinite(rtgchg) ? rtgchg : 0));
+  const changeStr =
+    Number.isFinite(rtgchg) && rtgchg !== 0
+      ? `(<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>)`
+      : "";
 
   $("#player-name").html(
-    `${rankHtml}${fedHtml}${titleHtml}${nameHtml}${ratingHtml}`,
+    [
+      rank ? `<span class="player-rank">#${rank}</span> ` : "",
+      federation ? `<span class="player-federation">${federation}</span> ` : "",
+      title ? `<span class="title">${title}</span> ` : "",
+      url
+        ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${name}</strong></a>`
+        : `<strong>${name}</strong>`,
+      Number.isFinite(rating)
+        ? ` <span class="player-rating">${newRating} ${changeStr}</span>`
+        : "",
+    ].join(""),
   );
 }
 
@@ -464,21 +428,25 @@ function renderPairingsTable(rounds, playerData, url) {
   renderPlayerHeader(playerData, url);
 
   const visible = PAIRINGS_COLUMNS.filter((col) =>
-    rounds.some((r) => col.isPresent(r)),
+    rounds.some((round) => col.isPresent(round)),
   );
-  const thead = `<thead><tr>${visible.map((c) => `<th>${c.header}</th>`).join("")}</tr></thead>`;
+  const thead = `<thead><tr>${visible.map((col) => `<th>${col.header}</th>`).join("")}</tr></thead>`;
   const tbody = `<tbody>${rounds
-    .map((r) => `<tr>${visible.map((c) => c.render(r)).join("")}</tr>`)
+    .map(
+      (round) => `<tr>${visible.map((col) => col.render(round)).join("")}</tr>`,
+    )
     .join("")}</tbody>`;
+  const showNote =
+    playerData.rating > 0 &&
+    rounds.some(
+      (round) =>
+        round.opponentRating > 0 &&
+        Math.abs(playerData.rating - round.opponentRating) > 400,
+    );
 
   $("#pairings-table").html(
     `<table>${thead}${tbody}</table>` +
-      (playerData.rating > 0 &&
-      rounds.some(
-        (r) =>
-          r.opponentRating > 0 &&
-          Math.abs(playerData.rating - r.opponentRating) > 400,
-      )
+      (showNote
         ? '<div class="note">*) Rating difference of more than 400. It was limited to 400.</div>'
         : ""),
   );
@@ -501,7 +469,6 @@ function renderPairingsTable(rounds, playerData, url) {
  */
 async function showPairingsTableFromInput() {
   let url = $("#url-input").val().trim();
-
   if (!url) {
     url = PersistentStorage.get() ?? "";
     if (url) $("#url-input").val(url);
@@ -519,8 +486,7 @@ async function showPairingsTableFromInput() {
       SessionStorage.set("rounds", rounds);
       SessionStorage.set("playerData", playerData);
     }
-
-    PersistentStorage.set(url); // always persisted on a successful fetch
+    PersistentStorage.set(url);
   } catch (err) {
     alert(err.message || "No Pairings found for this URL.");
     console.error(err);
@@ -535,13 +501,8 @@ $(function () {
   const cachedPlayerData = SessionStorage.getJSON("playerData");
 
   if (storedUrl) $("#url-input").val(storedUrl);
-
-  // Restore from session cache immediately for an instant render, then fetch
-  // live data in the background. The table is only re-rendered if the fresh
-  // data differs from the cache.
   if (cachedRounds && cachedPlayerData && cachedPlayerData.url === storedUrl)
     renderPairingsTable(cachedRounds, cachedPlayerData, storedUrl);
-
   if (storedUrl) showPairingsTableFromInput();
 
   $("#chess-resultsForm").on("submit", (e) => {
