@@ -35,6 +35,15 @@ table {
     transform: skewX(-10deg);
 }
 
+.player-points {
+    font-family: "Rubik", sans-serif;
+    font-weight: 500;
+    background: var(--deep-blue);
+    color: var(--white-container);
+    border-radius: 5px;
+    padding: 4px 6px;
+}
+
 /* ─── Component Styles ──────────────────────────── */
 
 #chess-resultsForm {
@@ -153,6 +162,10 @@ tr:last-child td:last-child {
 
 .dark-theme #player-name {
     color: var(--white-e0);
+}
+
+.dark-theme .player-points {
+    background: var(--grey-444);
 }
 
 .dark-theme table {

@@ -305,6 +305,7 @@ function buildPlayerData(playerInfo, rating, rtgchg, url) {
     title: playerInfo["Title"] ?? "",
     rank: playerInfo["Rank"] ?? "",
     federation: playerInfo["Federation"] ?? "",
+    points: playerInfo["Points"] ?? "",
     rating,
     rtgchg,
   };
@@ -386,10 +387,10 @@ const PAIRINGS_COLUMNS = [
 
 /**
  * Renders (or updates) the player header above the table.
- * Format: #[Rank] [Federation] <Title> [Name] [New Rating] ([rtgchg])
+ * Format: #[Rank] [Federation] <Title> [Name] [New Rating] ([rtgchg]) — [Points]/[totalRounds]
  */
-function renderPlayerHeader(playerData, url) {
-  const { name, title, rank, rating, rtgchg, federation } = playerData;
+function renderPlayerHeader(playerData, url, totalRounds) {
+  const { name, title, rank, rating, rtgchg, federation, points } = playerData;
   if (!name) return;
 
   if (!$("#player-name").length)
@@ -400,6 +401,10 @@ function renderPlayerHeader(playerData, url) {
     Number.isFinite(rtgchg) && rtgchg !== 0
       ? `(<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>)`
       : "";
+
+  const pointsStr = points
+    ? `<span class="gap"></span><span class="player-points">${normalisePoints(points)}${totalRounds ? ` / ${totalRounds}` : ""}</span>`
+    : "";
 
   $("#player-name").html(
     [
@@ -412,6 +417,7 @@ function renderPlayerHeader(playerData, url) {
       Number.isFinite(rating)
         ? ` <span class="player-rating">${newRating} ${changeStr}</span>`
         : "",
+      pointsStr,
     ].join(""),
   );
 }
@@ -421,7 +427,8 @@ function renderPlayerHeader(playerData, url) {
  * Any column whose values are absent across every round is omitted.
  */
 function renderPairingsTable(rounds, playerData, url) {
-  renderPlayerHeader(playerData, url);
+  const totalRounds = rounds[rounds.length - 1]?.round ?? "";
+  renderPlayerHeader(playerData, url, totalRounds);
 
   const visible = PAIRINGS_COLUMNS.filter((col) =>
     rounds.some((round) => col.isPresent(round)),
