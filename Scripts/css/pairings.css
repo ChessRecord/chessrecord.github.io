@@ -54,7 +54,7 @@ th {
     background: var(--white-e0-95);
 }
 
-tr:nth-child(even) {
+tr:nth-child(even) td {
     background: #fcfcfc;
 }
 
@@ -168,7 +168,7 @@ tr:last-child td:last-child {
     background: var(--grey-444);
 }
 
-.dark-theme tr:nth-child(even) {
+.dark-theme tr:nth-child(even) td {
     background: var(--grey-333);
 }
 
