@@ -182,13 +182,13 @@ function parsePairings($html, url) {
         .children("tr")
         .first();
       if (!$firstRow.children("th").length) return false;
-      const headerTexts = $firstRow
+      const headers = $firstRow
         .children("th, td")
         .map((_, headerCell) => $(headerCell).text().trim())
         .get();
       return (
-        headerTexts.some((headerText) => headerText.includes("Rd")) &&
-        headerTexts.some((headerText) => headerText.includes("Res"))
+        headers.some((header) => header.includes("Rd")) &&
+        headers.some((header) => header.includes("Res"))
       );
     })
     .first();
@@ -202,7 +202,7 @@ function parsePairings($html, url) {
     .map((_, th) => $(th).text().trim() || "Title")
     .get();
   const colIdx = (keyword) =>
-    headers.findIndex((headerText) => headerText.includes(keyword));
+    headers.findIndex((header) => header.includes(keyword));
 
   const idx = {
     rd: colIdx("Rd"),
