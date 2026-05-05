@@ -16,7 +16,7 @@ table {
 
 /* ─── Typography ────────────────────────────────── */
 
-#player-name {
+#player-profile {
     margin-bottom: var(--small);
     margin-left: var(--small);
 
@@ -160,7 +160,7 @@ tr:last-child td:last-child {
 
 /* ─── Dark Theme Overrides ──────────────────────── */
 
-.dark-theme #player-name {
+.dark-theme #player-profile {
     color: var(--white-e0);
 }
 

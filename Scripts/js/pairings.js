@@ -4,7 +4,7 @@
 
 const PROXY_URL = "https://proxy.caticuchess.workers.dev/";
 
-const PLAYER_INFO_KEYS = new Set([
+const PLAYER_PROFILE_KEYS = new Set([
   "Name",
   "Title",
   "Starting rank",
@@ -161,7 +161,7 @@ function parsePlayerInfo($html) {
           $cells.eq(1).text().trim(),
         ];
       })
-      .filter(([key]) => PLAYER_INFO_KEYS.has(key)),
+      .filter(([key]) => PLAYER_PROFILE_KEYS.has(key)),
   );
 }
 
@@ -393,8 +393,8 @@ function renderPlayerHeader(playerData, url, totalRounds) {
   const { name, title, rank, rating, rtgchg, federation, points } = playerData;
   if (!name) return;
 
-  if (!$("#player-name").length)
-    $("#pairings-table").before('<div id="player-name"></div>');
+  if (!$("#player-profile").length)
+    $("#pairings-table").before('<div id="player-profile"></div>');
 
   const newRating = Math.round(rating + (Number.isFinite(rtgchg) ? rtgchg : 0));
   const changeStr =
@@ -406,13 +406,13 @@ function renderPlayerHeader(playerData, url, totalRounds) {
     ? `<span class="gap"></span><span class="player-points">${normalisePoints(points)}${totalRounds ? ` / ${totalRounds}` : ""}</span>`
     : "";
 
-  $("#player-name").html(
+  $("#player-profile").html(
     [
       rank ? `<span class="player-rank">#${rank}</span> ` : "",
       federation ? `<span class="player-federation">${federation}</span> ` : "",
       title ? `<span class="title">${title}</span> ` : "",
       url
-        ? `<a href="${url}" id="player-name-link" target="_blank"><strong>${name}</strong></a>`
+        ? `<a href="${url}" id="player-profile-link" target="_blank"><strong>${name}</strong></a>`
         : `<strong>${name}</strong>`,
       Number.isFinite(rating)
         ? ` <span class="player-rating">${newRating} ${changeStr}</span>`
