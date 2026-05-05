@@ -399,7 +399,7 @@ function renderPlayerHeader(playerData, url, totalRounds) {
   const newRating = Math.round(rating + (Number.isFinite(rtgchg) ? rtgchg : 0));
   const changeStr =
     Number.isFinite(rtgchg) && rtgchg !== 0
-      ? `(<span class="player-rtgchg">${rtgchg > 0 ? "+" : ""}${rtgchg}</span>)`
+      ? `<span class="player-rtgchg">(${rtgchg > 0 ? "+" : ""}${rtgchg})</span>`
       : "";
 
   const pointsStr = points
