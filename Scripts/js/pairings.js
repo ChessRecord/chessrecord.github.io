@@ -104,15 +104,14 @@ function buildOpponentProfileUrl(baseUrl, startNo) {
  */
 function formatRatingDelta(playerRating, oppRating, score) {
   const delta = calcChange(playerRating, oppRating, score);
-  return delta === "" ? "" : (delta >= 0 ? "+" : "") + delta;
+  return delta === "" ? "" : signum(delta);
 }
 
 /**
  * Normalises fractional-point notation from the server format
  * (e.g. "1,5" → "1½", "0,5" → "½").
  */
-const normalisePoints = (raw) =>
-  raw.replace(/,5/g, "&#189;").replace(/0&#189;/g, "&#189;");
+const normalisePoints = (raw) => raw.replace(/0?,5/g, "&#189;");
 
 // =============================================================================
 // Data acquisition
@@ -181,9 +180,9 @@ function parsePairings($html, url) {
         .children("tbody")
         .children("tr")
         .first();
-      if (!$firstRow.children("th").length) return false;
-      const headers = $firstRow
-        .children("th, td")
+      const $headers = $firstRow.children("th, td");
+      if (!$headers.filter("th").length) return false;
+      const headers = $headers
         .map((_, headerCell) => $(headerCell).text().trim())
         .get();
       return (
@@ -396,10 +395,11 @@ function renderPlayerHeader(playerData, url, totalRounds) {
   if (!$("#player-profile").length)
     $("#pairings-table").before('<div id="player-profile"></div>');
 
-  const newRating = Math.round(rating + (Number.isFinite(rtgchg) ? rtgchg : 0));
+  const rtgchgFinite = Number.isFinite(rtgchg);
+  const newRating = Math.round(rating + (rtgchgFinite ? rtgchg : 0));
   const changeStr =
-    Number.isFinite(rtgchg) && rtgchg !== 0
-      ? `<span class="player-rtgchg">(${rtgchg > 0 ? "+" : ""}${rtgchg})</span>`
+    rtgchgFinite && rtgchg !== 0
+      ? `<span class="player-rtgchg">(${signum(rtgchg)})</span>`
       : "";
 
   const pointsStr = points
@@ -490,8 +490,11 @@ async function showPairingsTableFromInput() {
       livePlayerDataJSON !== SessionStorage.get("playerData")
     ) {
       renderPairingsTable(rounds, playerData, url);
-      SessionStorage.set("rounds", rounds);
-      SessionStorage.set("playerData", playerData);
+      sessionStorage.setItem(SessionStorage.KEYS.rounds, liveRoundsJSON);
+      sessionStorage.setItem(
+        SessionStorage.KEYS.playerData,
+        livePlayerDataJSON,
+      );
     }
     PersistentStorage.set(url);
   } catch (err) {

@@ -2,6 +2,11 @@
 
 const isValidString = (s) => typeof s === "string" && s.length > 0;
 
+const signum = (v) => (
+  (v = +v),
+  isNaN(v) ? "NaN" : (v > 0 ? "+" : "") + (v || 0)
+);
+
 /** True when a value is non-null, non-undefined, and non-empty-string. */
 const hasValue = (value) =>
   value !== null && value !== undefined && value !== "";
