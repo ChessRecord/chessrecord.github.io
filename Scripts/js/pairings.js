@@ -117,9 +117,12 @@ const normalisePoints = (raw) => raw.replace(/0?,5/g, "&#189;");
 // Data acquisition
 // =============================================================================
 
+/** Tracks the in-flight fetch so a subsequent search can cancel it. */
+let currentFetchController = null;
+
 /** Fetches raw HTML through the CORS proxy and returns it as a string. */
-async function fetchPage(url) {
-  const res = await fetch(PROXY_URL + url);
+async function fetchPage(url, signal) {
+  const res = await fetch(PROXY_URL + url, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching page.`);
   return res.text();
 }
@@ -249,8 +252,8 @@ function parsePairings($html, url) {
 }
 
 /** Fetches and parses a chess-results.com player page. */
-async function scrapeChessResults(url) {
-  const $html = $("<div>").html(await fetchPage(url));
+async function scrapeChessResults(url, signal) {
+  const $html = $("<div>").html(await fetchPage(url, signal));
   return {
     playerInfo: parsePlayerInfo($html),
     pairings: parsePairings($html, url),
@@ -265,11 +268,11 @@ async function scrapeChessResults(url) {
  * Fetches, parses, and enriches a player's results page.
  * Each round is extended with projected rating deltas for win, draw, and loss.
  */
-async function getChessResults(url) {
+async function getChessResults(url, signal) {
   if (!url.includes("chess-results.com"))
     throw new Error("Please enter a valid Chess-Results URL.");
 
-  const { playerInfo, pairings } = await scrapeChessResults(url);
+  const { playerInfo, pairings } = await scrapeChessResults(url, signal);
 
   const rating =
     parseInt(
@@ -479,8 +482,14 @@ async function showPairingsTableFromInput() {
   if (!url) return;
 
   showLoader("#searchURL span");
+  currentFetchController?.abort();
+  currentFetchController = new AbortController();
+  const { signal } = currentFetchController;
   try {
-    const { playerInfo, rating, rtgchg, rounds } = await getChessResults(url);
+    const { playerInfo, rating, rtgchg, rounds } = await getChessResults(
+      url,
+      signal,
+    );
     const playerData = buildPlayerData(playerInfo, rating, rtgchg, url);
     const liveRoundsJSON = JSON.stringify(rounds);
     const livePlayerDataJSON = JSON.stringify(playerData);
@@ -498,6 +507,7 @@ async function showPairingsTableFromInput() {
     }
     PersistentStorage.set(url);
   } catch (err) {
+    if (err.name === "AbortError") return;
     alert(err.message || "No Pairings found for this URL.");
     console.error(err);
   } finally {
