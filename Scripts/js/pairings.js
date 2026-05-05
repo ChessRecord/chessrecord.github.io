@@ -447,11 +447,11 @@ function renderPairingsTable(rounds, playerData, url) {
         Math.abs(playerData.rating - round.opponentRating) > 400,
     );
 
-  $("#pairings-table").html(
-    `<table>${thead}${tbody}</table>` +
-      (showNote
-        ? '<div class="note">*) Rating difference of more than 400. It was limited to 400.</div>'
-        : ""),
+  $("#pairings-table").html(`<table>${thead}${tbody}</table>`);
+  $("#note").html(
+    showNote
+      ? "*) Rating difference of more than 400. It was limited to 400."
+      : "",
   );
 }
 

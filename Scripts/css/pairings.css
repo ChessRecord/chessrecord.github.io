@@ -116,7 +116,7 @@ tr:last-child td:last-child {
     justify-content: center;
 }
 
-.note {
+#note {
     margin-top: 12px;
 
     color: #444;
@@ -185,7 +185,7 @@ tr:last-child td:last-child {
     background: var(--grey-333);
 }
 
-.dark-theme .note {
+.dark-theme #note {
     color: var(--white-e0);
 }
 
@@ -196,7 +196,7 @@ tr:last-child td:last-child {
         overflow-x: auto;
     }
 
-    .note {
+    #note {
         display: none;
     }
 }
