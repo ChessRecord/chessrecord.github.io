@@ -231,7 +231,7 @@ a.redirect {
 span.gap {
     display: inline-block;
 
-    width: 0.5rem;
+    width: var(--gap);
 }
 .tilt {
     display: inline-block;

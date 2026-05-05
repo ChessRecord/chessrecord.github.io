@@ -34,6 +34,7 @@
     --medium: 20px;
     --normal: 25px;
     --large: 30px;
+    --gap: 0.5rem;
 
     --good: #4caf50;
     --bad: #f44336;
