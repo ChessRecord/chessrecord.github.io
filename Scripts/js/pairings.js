@@ -2,7 +2,7 @@
 // Constants
 // =============================================================================
 
-const PROXY_URL = "https://proxy.caticuchess.workers.dev/";
+const PROXY_URL = "https://proxy.chessrecord.workers.dev/";
 
 const PLAYER_PROFILE_KEYS = new Set([
   "Name",
