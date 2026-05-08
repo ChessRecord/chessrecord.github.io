@@ -260,6 +260,22 @@ async function scrapeChessResults(url, signal) {
   };
 }
 
+/**
+ * Fetches a single opponent's profile page and returns their current rank,
+ * or null if the rank is missing or the fetch fails.
+ * Reuses the existing fetchPage + parsePlayerInfo pipeline — no extra URL
+ * construction needed since the caller supplies the pre-built profile URL.
+ */
+async function fetchOpponentRank(profileUrl, signal) {
+  try {
+    const $html = $("<div>").html(await fetchPage(profileUrl, signal));
+    const rank = parsePlayerInfo($html)["Rank"];
+    return rank?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 // =============================================================================
 // Data transformation
 // =============================================================================
@@ -285,9 +301,25 @@ async function getChessResults(url, signal) {
     (playerInfo["FIDE rtg +/-"] ?? "0").replace(/,/g, "."),
   );
 
+  // Fetch opponent ranks in parallel, deduplicating by profile URL so the
+  // same player is never fetched twice (e.g. in team events or rematches).
+  const uniqueProfileUrls = [
+    ...new Set(pairings.map((p) => p.opponentProfileUrl).filter(Boolean)),
+  ];
+  const rankMap = new Map();
+  await Promise.allSettled(
+    uniqueProfileUrls.map(async (profileUrl) => {
+      const rank = await fetchOpponentRank(profileUrl, signal);
+      rankMap.set(profileUrl, rank);
+    }),
+  );
+
   const rounds = pairings.map((pairing) => ({
     ...pairing,
     opponentPoints: normalisePoints(pairing.opponentPoints),
+    opponentRank: pairing.opponentProfileUrl
+      ? (rankMap.get(pairing.opponentProfileUrl) ?? null)
+      : null,
     win: formatRatingDelta(rating, pairing.opponentRating, 1),
     draw: formatRatingDelta(rating, pairing.opponentRating, 0.5),
     loss: formatRatingDelta(rating, pairing.opponentRating, 0),
@@ -341,6 +373,11 @@ const PAIRINGS_COLUMNS = [
   simpleCol("Round", "round"),
   simpleCol("Board", "boardNo"),
   simpleCol("Start", "playerStartNo"),
+  {
+    header: "Rank",
+    isPresent: (round) => hasValue(round.opponentRank),
+    render: (round) => `<td>#${round.opponentRank}</td>`,
+  },
   {
     header: "Name",
     isPresent: (round) => hasValue(round.opponentName),
