@@ -107,12 +107,6 @@ function formatRatingDelta(playerRating, oppRating, score) {
   return delta === "" ? "" : signum(delta);
 }
 
-/**
- * Normalises fractional-point notation from the server format
- * (e.g. "1,5" → "1½", "0,5" → "½").
- */
-const normalisePoints = (raw) => raw.replace(/0?,5/g, "&#189;");
-
 // =============================================================================
 // Data acquisition
 // =============================================================================
