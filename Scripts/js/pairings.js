@@ -370,7 +370,7 @@ const PAIRINGS_COLUMNS = [
   {
     header: "Rank",
     isPresent: (round) => hasValue(round.opponentRank),
-    render: (round) => `<td>#${round.opponentRank}</td>`,
+    render: (round) => `<td>${round.opponentRank}</td>`,
   },
   {
     header: "Name",
