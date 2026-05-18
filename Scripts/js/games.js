@@ -263,7 +263,7 @@ function displayGames(searchTerm = window.searchTerm || "") {
             </div>
           </div>
           <button class="delete-game-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteGame('${game.id || "unknown"}')">
-            <span class="fontawesome"></span>
+            <i class="fa-solid fa-delete-left"></i>
           </button>
         </div>
       `;
